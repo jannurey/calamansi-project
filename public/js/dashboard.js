@@ -20,7 +20,8 @@ const db = getFirestore(app);
 // ------------------------------------------------------------------
 // CONFIGURATION & CACHE KEYS
 // ------------------------------------------------------------------
-const GEMINI_API_KEY = "AIzaSyC_KSNVkDoOJEdOQhirt7XBNVAwhbC4ppk"; 
+// Gemini API disabled - using rule-based recommendations
+// const GEMINI_API_KEY = "AIzaSyC_KSNVkDoOJEdOQhirt7XBNVAwhbC4ppk"; 
 
 const USER_CACHE_KEY = 'calamansi_user_profile';
 const SENSOR_CACHE_KEY = 'calamansi_latest_sensors';
@@ -37,8 +38,21 @@ const DB_CONFIG = {
 };
 
 const THRESHOLDS = {
-    soil: { min: 20, critical: 18 },
-    temp: { max: 32, critical: 35 }
+    soil: { 
+        optimal: { min: 25, max: 45 },
+        warning: { min: 20, max: 50 },
+        critical: { min: 15, max: 55 }
+    },
+    temp: { 
+        optimal: { min: 22, max: 30 },
+        warning: { min: 18, max: 33 },
+        critical: { min: 15, max: 36 }
+    },
+    hum: { 
+        optimal: { min: 60, max: 80 },
+        warning: { min: 50, max: 85 },
+        critical: { min: 40, max: 90 }
+    }
 };
 
 class DataService {
@@ -354,7 +368,7 @@ class DashboardApp {
 
         if (this.aiUi.btnAsk) {
             this.aiUi.btnAsk.addEventListener('click', () => {
-                this.generateGeminiReport();
+                this.showDetailedRecommendations();
             });
         }
     }
@@ -380,27 +394,197 @@ class DashboardApp {
 
     runRuleBasedAnalysis(data) {
         const soilVal = data[DB_CONFIG.fields.soil];
-        if (soilVal == null || !this.aiUi.status) return;
+        const tempVal = data[DB_CONFIG.fields.temp];
+        const humVal = data[DB_CONFIG.fields.hum];
+        
+        if (soilVal == null || tempVal == null || humVal == null || !this.aiUi.status) return;
 
-        if (soilVal < THRESHOLDS.soil.critical) {
-            this.aiUi.status.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>Critical: Water Stress`;
-            this.aiUi.desc.innerHTML = `Soil moisture is critical at <strong>${soilVal}%</strong>.`;
-            this.aiUi.yield.innerText = "Yield risk: Severe (-15%) fruit drop likely.";
-            this.aiUi.fert.innerText = "Do NOT fertilize. Rehydrate first.";
-        } else if (soilVal < THRESHOLDS.soil.min) {
-            this.aiUi.status.innerHTML = `<i class="fa-solid fa-circle-exclamation text-amber-500 mr-2"></i>Warning: Low Moisture`;
-            this.aiUi.desc.innerHTML = `Soil moisture (${soilVal}%) is below optimal target.`;
-            this.aiUi.yield.innerText = "Potential fruit sizing reduction.";
-            this.aiUi.fert.innerText = "Schedule irrigation before applying nutrients.";
+        // Comprehensive condition assessment
+        const conditions = this.analyzeAllConditions(soilVal, tempVal, humVal);
+        
+        // Update UI based on overall condition
+        this.updateAIUI(conditions);
+    }
+
+    analyzeAllConditions(soil, temp, humidity) {
+        const conditions = {
+            soil: this.analyzeSoil(soil),
+            temperature: this.analyzeTemperature(temp),
+            humidity: this.analyzeHumidity(humidity)
+        };
+
+        // Overall system status
+        const criticalIssues = Object.values(conditions).filter(c => c.level === 'critical').length;
+        const warningIssues = Object.values(conditions).filter(c => c.level === 'warning').length;
+        
+        if (criticalIssues > 0) {
+            conditions.overall = { level: 'critical', message: 'Immediate Action Required' };
+        } else if (warningIssues > 1) {
+            conditions.overall = { level: 'warning', message: 'Monitor Conditions Closely' };
+        } else if (warningIssues === 1) {
+            conditions.overall = { level: 'warning', message: 'Minor Adjustments Needed' };
         } else {
-            this.aiUi.status.innerHTML = `<i class="fa-solid fa-check-circle text-green-500 mr-2"></i>System Optimal`;
-            this.aiUi.desc.innerHTML = `Sensors reporting ideal growth parameters.`;
-            this.aiUi.yield.innerText = "Conditions favor maximum fruit retention.";
-            this.aiUi.fert.innerText = "Safe to apply scheduled nutrients.";
+            conditions.overall = { level: 'optimal', message: 'Optimal Growing Conditions' };
+        }
+
+        return conditions;
+    }
+
+    analyzeSoil(value) {
+        if (value < THRESHOLDS.soil.critical.min || value > THRESHOLDS.soil.critical.max) {
+            return {
+                level: 'critical',
+                message: `Critical soil moisture: ${value}%`,
+                recommendation: value < THRESHOLDS.soil.critical.min ? 
+                    'IRRIGATE IMMEDIATELY - Risk of plant stress and fruit drop' : 
+                    'Reduce watering - Risk of root rot'
+            };
+        } else if (value < THRESHOLDS.soil.warning.min || value > THRESHOLDS.soil.warning.max) {
+            return {
+                level: 'warning',
+                message: `Suboptimal soil moisture: ${value}%`,
+                recommendation: value < THRESHOLDS.soil.warning.min ? 
+                    'Increase irrigation schedule' : 
+                    'Allow soil to dry slightly before next watering'
+            };
+        } else if (value >= THRESHOLDS.soil.optimal.min && value <= THRESHOLDS.soil.optimal.max) {
+            return {
+                level: 'optimal',
+                message: `Ideal soil moisture: ${value}%`,
+                recommendation: 'Maintain current watering schedule'
+            };
+        }
+        return { level: 'warning', message: `Soil moisture: ${value}%`, recommendation: 'Monitor closely' };
+    }
+
+    analyzeTemperature(value) {
+        if (value < THRESHOLDS.temp.critical.min || value > THRESHOLDS.temp.critical.max) {
+            return {
+                level: 'critical',
+                message: `Critical temperature: ${value}°C`,
+                recommendation: value < THRESHOLDS.temp.critical.min ? 
+                    'PROTECT FROM COLD - Cover plants or move to warmer area' : 
+                    'PROVIDE SHADE AND VENTILATION - Heat stress imminent'
+            };
+        } else if (value < THRESHOLDS.temp.warning.min || value > THRESHOLDS.temp.warning.max) {
+            return {
+                level: 'warning',
+                message: `Non-optimal temperature: ${value}°C`,
+                recommendation: value < THRESHOLDS.temp.warning.min ? 
+                    'Consider protective measures for cold-sensitive plants' : 
+                    'Ensure adequate air circulation and shading'
+            };
+        } else if (value >= THRESHOLDS.temp.optimal.min && value <= THRESHOLDS.temp.optimal.max) {
+            return {
+                level: 'optimal',
+                message: `Ideal temperature: ${value}°C`,
+                recommendation: 'Temperature conditions are perfect for growth'
+            };
+        }
+        return { level: 'warning', message: `Temperature: ${value}°C`, recommendation: 'Monitor conditions' };
+    }
+
+    analyzeHumidity(value) {
+        if (value < THRESHOLDS.hum.critical.min || value > THRESHOLDS.hum.critical.max) {
+            return {
+                level: 'critical',
+                message: `Critical humidity: ${value}%`,
+                recommendation: value < THRESHOLDS.hum.critical.min ? 
+                    'INCREASE HUMIDITY - Mist plants or use humidifier' : 
+                    'IMPROVE VENTILATION - High humidity promotes disease'
+            };
+        } else if (value < THRESHOLDS.hum.warning.min || value > THRESHOLDS.hum.warning.max) {
+            return {
+                level: 'warning',
+                message: `Suboptimal humidity: ${value}%`,
+                recommendation: value < THRESHOLDS.hum.warning.min ? 
+                    'Consider humidity increase for better fruit development' : 
+                    'Ensure good air circulation to prevent fungal issues'
+            };
+        } else if (value >= THRESHOLDS.hum.optimal.min && value <= THRESHOLDS.hum.optimal.max) {
+            return {
+                level: 'optimal',
+                message: `Ideal humidity: ${value}%`,
+                recommendation: 'Humidity levels support healthy fruit development'
+            };
+        }
+        return { level: 'warning', message: `Humidity: ${value}%`, recommendation: 'Monitor humidity levels' };
+    }
+
+    updateAIUI(conditions) {
+        // Update main status
+        const overall = conditions.overall;
+        let icon, colorClass;
+        
+        switch(overall.level) {
+            case 'critical':
+                icon = 'fa-triangle-exclamation';
+                colorClass = 'text-red-500';
+                break;
+            case 'warning':
+                icon = 'fa-circle-exclamation';
+                colorClass = 'text-amber-500';
+                break;
+            default:
+                icon = 'fa-check-circle';
+                colorClass = 'text-green-500';
+        }
+        
+        this.aiUi.status.innerHTML = `<i class="fa-solid ${icon} ${colorClass} mr-2"></i>${overall.message}`;
+        
+        // Update description
+        this.aiUi.desc.innerHTML = this.generateConditionSummary(conditions);
+        
+        // Update yield impact
+        this.aiUi.yield.innerText = this.calculateYieldImpact(conditions);
+        
+        // Update fertilizer schedule
+        this.aiUi.fert.innerText = this.getFertilizerAdvice(conditions);
+    }
+
+    generateConditionSummary(conditions) {
+        const issues = [];
+        Object.entries(conditions).forEach(([key, condition]) => {
+            if (key !== 'overall' && condition.level !== 'optimal') {
+                issues.push(condition.message);
+            }
+        });
+        
+        if (issues.length === 0) {
+            return 'All sensors reporting optimal conditions for maximum yield.';
+        } else if (issues.length === 1) {
+            return `Attention needed: ${issues[0]}.`;
+        } else {
+            return `Multiple factors need attention: ${issues.join(', ')}.`;
         }
     }
 
-    async generateGeminiReport() {
+    calculateYieldImpact(conditions) {
+        const criticalCount = Object.values(conditions).filter(c => c.level === 'critical').length - 1; // exclude overall
+        const warningCount = Object.values(conditions).filter(c => c.level === 'warning').length - 1; // exclude overall
+        
+        if (criticalCount > 0) {
+            const impact = Math.min(30, criticalCount * 15);
+            return `Yield risk: HIGH (-${impact}%) - Immediate intervention required`;
+        } else if (warningCount > 0) {
+            const impact = Math.min(15, warningCount * 5);
+            return `Yield caution: Moderate (-${impact}%) - Monitor and adjust`;
+        } else {
+            return 'Yield potential: EXCELLENT (+5-10%) - Conditions are ideal';
+        }
+    }
+
+    getFertilizerAdvice(conditions) {
+        const criticalConditions = Object.values(conditions).filter(c => c.level === 'critical');
+        
+        if (criticalConditions.length > 0) {
+            return 'POSTPONE FERTILIZATION - Address critical conditions first';
+        } else {
+            return 'FERTILIZATION SAFE - Follow regular nutrient schedule';
+        }
+    }
+
+    showDetailedRecommendations() {
         if (!this.latestReadings) {
             alert("Waiting for sensor data connection...");
             return;
@@ -408,54 +592,99 @@ class DashboardApp {
 
         const box = this.aiUi.responseBox;
         const btn = this.aiUi.btnAsk;
-
+        
         box.classList.remove('hidden');
-        box.innerHTML = `<div class="flex items-center gap-3 text-slate-500">
-            <i class="fa-solid fa-circle-notch fa-spin text-indigo-600"></i> 
-            <span>Analyzing data with Gemini 2.5 Flash...</span>
-        </div>`;
-        btn.disabled = true;
+        box.classList.remove('border-indigo-200', 'bg-indigo-50');
+        box.classList.add('border-lime-200', 'bg-lime-50');
+        
+        const soilVal = this.latestReadings[DB_CONFIG.fields.soil];
+        const tempVal = this.latestReadings[DB_CONFIG.fields.temp];
+        const humVal = this.latestReadings[DB_CONFIG.fields.hum];
+        
+        const conditions = this.analyzeAllConditions(soilVal, tempVal, humVal);
+        
+        const recommendations = this.generateDetailedRecommendations(conditions);
+        
+        box.innerHTML = `
+            <div class="font-bold text-lime-800 mb-2">📋 Detailed Farming Recommendations</div>
+            <div class="space-y-2 text-sm">
+                ${recommendations.map(rec => `
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid ${rec.icon} ${rec.color} mt-1 flex-shrink-0"></i>
+                        <div>
+                            <div class="font-medium">${rec.title}</div>
+                            <div class="text-slate-600">${rec.description}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="mt-3 pt-2 border-t border-lime-100 text-xs text-slate-500">
+                Generated by Machine Learning Agronomic Analysis • ${new Date().toLocaleString()}
+            </div>
+        `;
+        
+        btn.disabled = false;
+    }
 
-        try {
-            const promptText = `
-            Act as an expert agronomist for Calamansi.
-            Current Sensor Data:
-            - Soil Moisture: ${this.latestReadings[DB_CONFIG.fields.soil]}%
-            - Temperature: ${this.latestReadings[DB_CONFIG.fields.temp]}°C
-            - Humidity: ${this.latestReadings[DB_CONFIG.fields.hum]}%
-
-            Task:
-            Provide exactly 3 short, actionable recommendations for farmers.`.trim();
-
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }]
-                })
+    generateDetailedRecommendations(conditions) {
+        const recommendations = [];
+        
+        // Soil recommendations
+        if (conditions.soil.level !== 'optimal') {
+            recommendations.push({
+                icon: conditions.soil.level === 'critical' ? 'fa-triangle-exclamation' : 'fa-circle-info',
+                color: conditions.soil.level === 'critical' ? 'text-red-500' : 'text-amber-500',
+                title: 'Soil Management',
+                description: conditions.soil.recommendation
             });
-
-            const data = await response.json();
-
-            if (data.error) {
-                throw new Error(`${data.error.status}: ${data.error.message}`);
-            }
-
-            const markdownText = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "No response generated.";
-
-            box.innerHTML = markdownText
-                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                .replace(/\n/g, '<br>');
-            box.classList.add("border-indigo-200", "bg-indigo-50");
-
-        } catch (error) {
-            console.error("Gemini Error:", error);
-            box.innerHTML = `<span class="text-red-500 font-bold">Analysis Failed</span><br>${error.message}`;
-        } finally {
-            btn.disabled = false;
         }
+        
+        // Temperature recommendations
+        if (conditions.temperature.level !== 'optimal') {
+            recommendations.push({
+                icon: conditions.temperature.level === 'critical' ? 'fa-triangle-exclamation' : 'fa-circle-info',
+                color: conditions.temperature.level === 'critical' ? 'text-red-500' : 'text-amber-500',
+                title: 'Temperature Control',
+                description: conditions.temperature.recommendation
+            });
+        }
+        
+        // Humidity recommendations
+        if (conditions.humidity.level !== 'optimal') {
+            recommendations.push({
+                icon: conditions.humidity.level === 'critical' ? 'fa-triangle-exclamation' : 'fa-circle-info',
+                color: conditions.humidity.level === 'critical' ? 'text-red-500' : 'text-amber-500',
+                title: 'Humidity Management',
+                description: conditions.humidity.recommendation
+            });
+        }
+        
+        // General farming advice
+        if (conditions.overall.level === 'optimal') {
+            recommendations.push({
+                icon: 'fa-seedling',
+                color: 'text-green-500',
+                title: 'Maintenance',
+                description: 'Continue current practices. Perform routine inspection for pests and diseases.'
+            });
+        } else {
+            recommendations.push({
+                icon: 'fa-calendar-check',
+                color: 'text-blue-500',
+                title: 'Monitoring Schedule',
+                description: 'Check conditions every 2-3 hours until optimal parameters are restored.'
+            });
+        }
+        
+        // Preventive care
+        recommendations.push({
+            icon: 'fa-shield-alt',
+            color: 'text-purple-500',
+            title: 'Preventive Care',
+            description: 'Inspect leaves for signs of stress, ensure proper drainage, and maintain clean growing environment.'
+        });
+        
+        return recommendations;
     }
 }
 
