@@ -285,6 +285,7 @@
 
     <script type="module">
         import { app } from '../firebase-config.js';
+        import { initAuthSidebar } from '../js/Auth.js';
         import { 
             getAuth, 
             onAuthStateChanged,
@@ -305,6 +306,9 @@
 
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // Initialize responsive sidebar and profile sync
+        initAuthSidebar();
 
         // DOM Elements
         const userDisplayName = document.getElementById('user-display-name');
