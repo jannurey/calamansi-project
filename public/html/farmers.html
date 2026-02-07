@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmers Directory | Calamansi Yield System</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lime: {
+                            50: '#f7fee7',
+                            100: '#ecfccb',
+                            500: '#84cc16',
+                            600: '#65a30d',
+                            700: '#4d7c0f',
+                            900: '#365314',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
+
+        <aside class="w-64 bg-lime-900 text-white hidden md:flex flex-col z-20 flex-shrink-0 transition-all duration-300">
+            <div class="p-6 flex items-center gap-3 border-b border-lime-800">
+                <img src="/images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
+                <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-gauge-high w-5"></i> Dashboard
+                </a>
+                <a href="farmers.html" class="flex items-center gap-3 px-4 py-3 bg-lime-800 rounded-xl text-white font-medium shadow-inner">
+                    <i class="fa-solid fa-users w-5"></i> Farmers
+                </a>
+                <a href="farmer_request.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-clipboard-check w-5"></i> Manage Requests
+                </a>
+                <a href="yield_history.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-clock-rotate-left w-5"></i> Yield History
+                </a>
+                <a href="settings.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-gear w-5"></i> Settings
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-lime-800">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-lime-800/50">
+                    <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-8 h-8 rounded-full bg-white" alt="Admin">
+                    
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate" id="user-display-name">Admin</p>
+                        <p class="text-xs text-lime-300 truncate" id="user-display-email">Loading...</p>
+                    </div>
+                    
+                    <button id="btn-logout-trigger" class="text-lime-300 hover:text-white transition-colors p-2 rounded-md hover:bg-lime-700/50" title="Sign Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 flex-shrink-0">
+            <div class="flex items-center gap-2 md:hidden">
+                <button class="text-slate-600"><i class="fa-solid fa-bars text-xl"></i></button>
+                <span class="font-bold text-lime-900">Farmers Directory</span>
+            </div>
+            <div class="hidden md:block">
+                <h1 class="text-xl font-bold text-slate-800">Cooperative Members</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-lime-200 flex items-center gap-2" onclick="app.openModal()">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Add Farmer</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-lime-50 text-lime-600 flex items-center justify-center text-xl"><i class="fa-solid fa-users"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Members</p>
+                            <h3 class="text-xl font-bold text-slate-800">48</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fa-solid fa-map-location-dot"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Hectares</p>
+                            <h3 class="text-xl font-bold text-slate-800">124.5 ha</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl"><i class="fa-solid fa-check-circle"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Active Status</p>
+                            <h3 class="text-xl font-bold text-slate-800">92%</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                    <div class="relative w-full sm:w-96">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchInput" placeholder="Search farmers by name..." 
+                            class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition">
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="locationFilter" class="bg-slate-50 border border-slate-200 text-slate-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-lime-500">
+                            <option value="All">All Locations</option>
+                            <option value="Barangay 1">Barangay 1</option>
+                            <option value="Barangay 2">Barangay 2</option>
+                            <option value="Barangay 3">Barangay 3</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="farmersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Farmer Modal -->
+    <div id="addFarmerModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 relative animate-[fadeIn_0.3s_ease-out]">
+            <button onclick="app.closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            
+            <div class="mb-6">
+                <div class="w-12 h-12 bg-lime-100 rounded-full flex items-center justify-center text-lime-600 mb-3">
+                    <i class="fa-solid fa-user-plus text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800">Register New Farmer</h3>
+                <p class="text-sm text-slate-500">Enter the details of the cooperative member.</p>
+            </div>
+            
+            <form id="addFarmerForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">First Name</label>
+                        <input type="text" id="firstNameform" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. Juan">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Middle Name</label>
+                        <input type="text" id="middleNameform" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. Quinto">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Surname</label>
+                        <input type="text" id="surnameform" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. Dela Cruz">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Suffix <span class="text-xs text-slate-400 font-normal">(Optional)</span></label>
+                        <input type="text" id="suffixform" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="Jr.">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Location</label>
+                        <input type="text" 
+                            id="fLocationform" 
+                            required 
+                            placeholder="e.g. Barangay 1" 
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Land Size (ha)</label>
+                        <input type="number" 
+                            id="fHectaresform" 
+                            step="0.1" 
+                            required 
+                            class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4"> 
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email Address <span class="text-xs text-slate-400 font-normal">(Optional)</span></label>
+                        <input type="email" id="emailform" placeholder="farmer@gmail.com" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Contact Number</label>
+                        <input type="tel" id="fPhoneform" placeholder="09XXXXXXXXX" pattern="[0-9]{11}" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                    </div>
+                </div> 
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="app.closeModal()" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition text-sm font-medium">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition text-sm font-medium shadow-md shadow-lime-200">Register</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-4">
+                    <img id="det-photo" src="" class="w-12 h-12 rounded-full border-2 border-white shadow-sm bg-white">
+                    <div>
+                        <h3 id="det-title-name" class="font-bold text-slate-800 text-lg leading-tight">Farmer Details</h3>
+                            <p id="det-title-role" class="text-xs text-lime-600 font-bold uppercase tracking-wider">Member</p>
+                    </div>
+                </div>
+                <button onclick="app.closeDetailModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="flex border-b border-slate-100 px-6 bg-white">
+                <button onclick="app.switchTab('profile')" id="tab-profile" class="py-4 px-6 text-sm font-bold border-b-2 border-lime-600 text-lime-600 transition">
+                    <i class="fa-solid fa-user-gear mr-2"></i> Profile
+                </button>
+                <button onclick="app.switchTab('farm')" id="tab-farm" class="py-4 px-6 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-seedling mr-2"></i> Farm Information
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 bg-white">      
+                <div id="content-profile" class="space-y-6">
+                      <div class="flex justify-end mb-4">
+                        <button id="edit-profile-btn" onclick="app.enterEditMode()" class="bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            <i class="fa-solid fa-edit mr-2"></i> Edit Profile
+                        </button>
+                        <button id="save-profile-btn" onclick="app.saveProfileChanges()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition hidden">
+                            <i class="fa-solid fa-save mr-2"></i> Save
+                        </button>
+                        <button id="cancel-profile-btn" onclick="app.exitEditMode()" class="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition ml-2 hidden">
+                            <i class="fa-solid fa-times mr-2"></i> Cancel
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Full Name</p>
+                            <p id="p-fullname" class="profile-field text-sm font-semibold text-slate-700">--</p>
+                            <input id="edit-fullname" type="text" class="hidden w-full px-2 py-1 border rounded" placeholder="Full Name">
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Email Address</p>
+                            <p id="p-email" class="profile-field text-sm font-semibold text-slate-700">--</p>
+                            <input id="edit-email" type="email" class="hidden w-full px-2 py-1 border rounded">
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Phone Number</p>
+                            <p id="p-phone" class="profile-field text-sm font-semibold text-slate-700">--</p>
+                            <input id="edit-phone" type="tel" class="hidden w-full px-2 py-1 border rounded">
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Location</p>
+                            <p id="p-location" class="profile-field text-sm font-semibold text-slate-700">--</p>
+                            <input id="edit-location" type="text" class="hidden w-full px-2 py-1 border rounded">
+                        </div>
+                   
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Status</p>
+                            <span id="p-status" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase">--</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Joined Date</p>
+                            <p id="p-created" class="text-sm font-semibold text-slate-700">--</p>
+                        </div> 
+                    </div>                    
+                </div>
+
+                <div id="content-farm" class="hidden space-y-6">
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-4">
+                        <div class="col-span-2 bg-lime-50 p-3 rounded-lg border border-lime-100 flex items-center gap-3">
+                            <i class="fa-solid fa-map-pin text-lime-600"></i>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-lime-700">Detailed Farm Location</p>
+                                <p id="f-locations" class="text-sm text-lime-900">--</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Variety</p>
+                            <p id="f-variety" class="text-sm font-semibold text-slate-700">--</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Tree Age</p>
+                            <p id="f-age" class="text-sm font-semibold text-slate-700">--</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Average Production</p>
+                            <p id="f-prod" class="text-sm font-semibold text-slate-700">--</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Soil Type</p>
+                            <p id="f-soil" class="text-sm font-semibold text-slate-700">--</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Flowering Date</p>
+                            <p id="f-flower" class="text-sm font-semibold text-slate-700">--</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Est. Harvest</p>
+                            <p id="f-harvest" class="text-sm font-semibold text-slate-700">--</p>
+                        </div>
+                        <div class="col-span-2 pt-2 border-t border-slate-100">
+                            <p class="text-[10px] uppercase font-bold text-slate-400 mb-1">Fertilizer Practice</p>
+                            <p id="f-practice" class="text-sm text-slate-600 italic">--</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGOUT MODAL (ADDED) -->
+    <div id="logout-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+        <div id="logout-backdrop" class="absolute inset-0 bg-black/40 opacity-0"></div>
+
+        <div id="logout-panel"
+            class="bg-white p-6 rounded-xl relative opacity-0 transform translate-y-4 transition-all">
+            <h3 class="font-bold mb-2">Sign Out</h3>
+            <p class="text-sm mb-4">Are you sure you want to log out?</p>
+
+            <div class="flex justify-end gap-2">
+                <button id="btn-cancel-logout" class="px-4 py-2 bg-slate-100 rounded">
+                    Cancel
+                </button>
+                <button id="btn-confirm-logout" class="px-4 py-2 bg-red-600 text-white rounded">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/farmers.js"></script>
+    <script type="module" src="../js/logout.js"></script>
+ 
+
+    
+
+</body>
+</html>

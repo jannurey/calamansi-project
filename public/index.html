@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Calamansi Yield System</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        .bg-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ecfccb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        /* Input Animation */
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label {
+            transform: translateY(-1.5rem) scale(0.85);
+            color: #65a30d; /* lime-600 */
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lime: {
+                            50: '#f7fee7',
+                            100: '#ecfccb',
+                            500: '#84cc16',
+                            600: '#65a30d',
+                            700: '#4d7c0f',
+                            900: '#365314',
+                        }
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-4px)' },
+                            '20%, 40%, 60%, 80%': { transform: 'translateX(4px)' },
+                        },
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" }
+                        }
+                    },
+                    animation: {
+                        blob: "blob 7s infinite",
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-screen w-full flex overflow-hidden bg-white">
+
+    <div class="hidden lg:flex w-1/2 bg-lime-900 relative items-center justify-center overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-20">
+            <div class="absolute top-10 left-10 w-72 h-72 bg-lime-400 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+            <div class="absolute top-10 right-10 w-72 h-72 bg-green-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+            <div class="absolute -bottom-8 left-20 w-72 h-72 bg-emerald-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        </div>
+
+        <div class="relative z-10 p-12 text-white max-w-lg">
+            <div class="flex items-center gap-3 mb-6">
+                <img src="images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>                
+                <h1 class="text-3xl font-bold tracking-wide">Calamansi Yield System</h1>
+            </div>
+            <h2 class="text-4xl font-bold mb-4 leading-tight">Empowering Farmers with Data-Driven Decisions.</h2>
+            <p class="text-lime-100 text-lg mb-8">Monitor yield, analyze soil health, and get AI-powered recommendations to maximize your harvest.</p>
+            
+            <div class="flex gap-4">
+                <div class="flex -space-x-3">
+                    <img class="w-10 h-10 rounded-full border-2 border-lime-900" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Farmer1" alt="User">
+                    <img class="w-10 h-10 rounded-full border-2 border-lime-900" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Farmer2" alt="User">
+                    <img class="w-10 h-10 rounded-full border-2 border-lime-900" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Farmer3" alt="User">
+                    <div class="w-10 h-10 rounded-full border-2 border-lime-900 bg-lime-700 text-xs font-bold flex items-center justify-center">+2k</div>
+                </div>
+                <div class="flex flex-col justify-center">
+                    <div class="flex text-yellow-400 text-xs">
+                        <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                    </div>
+                    <span class="text-sm font-medium">Trusted by Cooperative Members</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-pattern relative">
+        <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative z-10">
+            
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-lime-100 text-lime-600 mb-4 lg:hidden">
+                    <i class="fa-solid fa-leaf text-xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Welcome</h2>
+                <p class="text-slate-500 mt-2">Please enter your details to sign in.</p>
+            </div>
+
+            <form id="loginForm" class="space-y-6">
+                <div id="errorContainer" class="hidden p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg animate-fade-in">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="errorText">Error message goes here.</span>
+                    </div>
+                </div>
+
+                <div class="relative input-group">
+                    <input type="email" id="email" placeholder=" " class="block px-4 py-3 w-full text-sm text-slate-900 bg-transparent rounded-lg border border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-lime-600 peer transition-colors" required />
+                    <label for="email" class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:px-2 peer-focus:text-lime-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 left-2 cursor-text">Email Address</label>
+                </div>
+
+                <div class="relative input-group">
+                    <input type="password" id="password" placeholder=" " class="block px-4 py-3 w-full text-sm text-slate-900 bg-transparent rounded-lg border border-slate-300 appearance-none focus:outline-none focus:ring-0 focus:border-lime-600 peer transition-colors" required />
+                    <label for="password" class="absolute text-sm text-slate-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 peer-focus:px-2 peer-focus:text-lime-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 left-2 cursor-text">Password</label>
+                    <button type="button" onclick="auth.togglePasswordVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
+                        <i class="fa-regular fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+                
+                <button type="submit" id="submitBtn" class="w-full text-white bg-lime-600 hover:bg-lime-700 focus:ring-4 focus:outline-none focus:ring-lime-300 font-medium rounded-lg text-sm px-5 py-3 text-center transition-all shadow-lg shadow-lime-200 flex justify-center items-center gap-2">
+                    <span>Sign in</span>
+                </button>
+            </form>
+        </div>
+        
+        <div class="absolute bottom-4 text-xs text-slate-400">
+            &copy; 2026 Calamansi Yield System. All rights reserved.
+        </div>
+    </div>
+
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>

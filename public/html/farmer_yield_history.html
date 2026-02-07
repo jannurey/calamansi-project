@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yield History | Calamansi Yield System</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Glassmorphism Effect for AI Panel */
+        .ai-panel {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+            border: 1px solid #dcfce7;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-filter-active {
+            background-color: #65a30d; /* lime-600 */
+            color: white;
+        }
+
+        .chart-filter-inactive {
+            background-color: white;
+            color: #475569; /* slate-600 */
+            border: 1px solid #e2e8f0;
+        }
+        
+        .chart-filter-inactive:hover {
+            background-color: #f8fafc;
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lime: {
+                            50: '#f7fee7',
+                            100: '#ecfccb',
+                            500: '#84cc16',
+                            600: '#65a30d',
+                            700: '#4d7c0f',
+                            900: '#365314',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+        
+         <!---Side bar-->
+           <aside class="w-64 bg-lime-900 text-white hidden md:flex flex-col z-20 flex-shrink-0 transition-all duration-300">
+            <div class="p-6 flex items-center gap-3 border-b border-lime-800">
+                <img src="../images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
+                <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <a href="farmer_dashboard.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-gauge-high w-5"></i> Dashboard
+                </a>
+                <a href="farmer_requests.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-comments w-5"></i> Requests
+                </a>
+                <a href="farmer_yield_history.html" class="flex items-center gap-3 px-4 py-3 bg-lime-800 rounded-xl text-white font-medium shadow-inner">
+                    <i class="fa-solid fa-chart-line w-5"></i> Yield History
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-clock-rotate-left w-5"></i> History
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-gear w-5"></i> Settings
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-lime-800">
+                <div class="flex items-center gap-3 p-3 rounded-lg bg-lime-800/50">
+                    <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Farmer" class="w-8 h-8 rounded-full bg-white" alt="Farmer">
+                    
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-white truncate" id="user-display-name">Farmer</p>
+                        <p class="text-xs text-lime-300 truncate" id="user-display-email">Loading...</p>
+                    </div>
+                    
+                    <button id="btn-logout-trigger" class="text-lime-300 hover:text-white transition-colors p-2 rounded-md hover:bg-lime-700/50" title="Sign Out">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 flex-shrink-0">
+                <div class="flex items-center gap-2 md:hidden">
+                    <button class="text-slate-600"><i class="fa-solid fa-bars text-xl"></i></button>
+                    <span class="font-bold text-lime-900">Yield History</span>
+                </div>
+                <div class="hidden md:block">
+                    <h1 class="text-xl font-bold text-slate-800">Yield History</h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold text-slate-700">My Farm</p>
+                        <p class="text-xs text-slate-500">Last updated: Just now</p>
+                    </div>
+                    <div class="w-10 h-10 bg-lime-100 rounded-full flex items-center justify-center text-lime-700">
+                        <i class="fa-solid fa-bell"></i>
+                    </div>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8">
+                
+                <div class="max-w-7xl mx-auto space-y-8">
+                    
+                    <!-- Stats Overview -->
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-lime-50 text-lime-600 flex items-center justify-center text-xl"><i class="fa-solid fa-seedling"></i></div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase font-bold">Total Yields</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="total-yields-count">0</h3>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fa-solid fa-chart-line"></i></div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase font-bold">Avg. Yield</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="avg-yield">0 kg</h3>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl"><i class="fa-solid fa-calendar"></i></div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase font-bold">Last Harvest</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="last-harvest-date">--</h3>
+                            </div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl"><i class="fa-solid fa-trend-up"></i></div>
+                            <div>
+                                <p class="text-xs text-slate-500 uppercase font-bold">Growth Rate</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="growth-rate">0%</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Section -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">Yield Trend Analysis</h3>
+                                <p class="text-sm text-slate-500">Historical yield data for optimal growth monitoring.</p>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2" id="timeframe-controls">
+                                <button data-tf="days" class="chart-filter-active px-3 py-1.5 text-xs font-semibold rounded-lg transition shadow-sm shadow-lime-200">Daily</button>
+                                <button data-tf="weeks" class="chart-filter-inactive px-3 py-1.5 text-xs font-semibold rounded-lg transition">Weekly</button>
+                                <button data-tf="months" class="chart-filter-inactive px-3 py-1.5 text-xs font-semibold rounded-lg transition">Monthly</button>
+                            </div>
+                        </div>
+
+                        <div class="relative h-72 w-full">
+                            <canvas id="yieldChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Yield Records Table -->
+                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between bg-slate-50/50">
+                            <div class="relative w-full sm:w-96">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                                <input type="text" id="search-yield" placeholder="Search yield records..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition">
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="filter-month" class="bg-white border border-slate-300 text-slate-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-lime-500">
+                                    <option value="">All Months</option>
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                                <button id="add-yield-record" class="bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-lime-200 flex items-center gap-2">
+                                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Add Record</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto table-container">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200">
+                                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Yield (kg)</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Quality</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Weather</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Notes</th>
+                                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100" id="yield-history-table-body">
+                                    <tr id="no-yield-row">
+                                        <td colspan="6" class="px-6 py-12 text-center">
+                                            <div class="flex flex-col items-center justify-center">
+                                                <i class="fa-solid fa-inbox text-4xl text-slate-300 mb-3"></i>
+                                                <p class="text-slate-500 font-medium">No yield records found</p>
+                                                <p class="text-slate-400 text-sm mt-1">Start by adding your first yield record</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    <!-- Add Yield Record Modal -->
+    <div id="addYieldModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
+                <h3 class="font-bold text-slate-800 text-lg">Add New Yield Record</h3>
+                <button onclick="closeAddYieldModal()" class="text-slate-400 hover:text-slate-600 transition text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="addYieldForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Harvest Date</label>
+                            <input type="date" id="addHarvestDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Yield Amount (kg)</label>
+                            <input type="number" id="addYieldAmount" step="0.1" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quality Grade</label>
+                            <select id="addQuality" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                                <option value="Grade A">Grade A</option>
+                                <option value="Grade B">Grade B</option>
+                                <option value="Grade C">Grade C</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Weather Conditions</label>
+                            <select id="addWeather" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                                <option value="Sunny">Sunny</option>
+                                <option value="Cloudy">Cloudy</option>
+                                <option value="Rainy">Rainy</option>
+                                <option value="Partly Cloudy">Partly Cloudy</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Notes (Optional)</label>
+                        <textarea id="addNotes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="Additional notes about this harvest..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="button" onclick="closeAddYieldModal()" class="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-medium">
+                            Save Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Yield Record Modal -->
+    <div id="editYieldModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
+                <h3 class="font-bold text-slate-800 text-lg">Edit Yield Record</h3>
+                <button onclick="closeEditYieldModal()" class="text-slate-400 hover:text-slate-600 transition text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="editYieldForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Harvest Date</label>
+                            <input type="date" id="editHarvestDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Yield Amount (kg)</label>
+                            <input type="number" id="editYieldAmount" step="0.1" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quality Grade</label>
+                            <select id="editQuality" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                                <option value="Grade A">Grade A</option>
+                                <option value="Grade B">Grade B</option>
+                                <option value="Grade C">Grade C</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Weather Conditions</label>
+                            <select id="editWeather" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                                <option value="Sunny">Sunny</option>
+                                <option value="Cloudy">Cloudy</option>
+                                <option value="Rainy">Rainy</option>
+                                <option value="Partly Cloudy">Partly Cloudy</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Notes (Optional)</label>
+                        <textarea id="editNotes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="Additional notes about this harvest..."></textarea>
+                    </div>
+                    
+                    <div class="flex justify-end gap-3 pt-4">
+                        <button type="button" onclick="closeEditYieldModal()" class="px-4 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-medium">
+                            Update Record
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script type="module">
+        import { app } from '../firebase-config.js';
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            addDoc,
+            updateDoc,
+            deleteDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const userDisplayName = document.getElementById('user-display-name');
+        const userDisplayEmail = document.getElementById('user-display-email');
+        const logoutBtn = document.getElementById('btn-logout-trigger');
+        const yieldTableBody = document.getElementById('yield-history-table-body');
+        const searchYield = document.getElementById('search-yield');
+        const filterMonth = document.getElementById('filter-month');
+        const addYieldRecordBtn = document.getElementById('add-yield-record');
+        const addYieldModal = document.getElementById('addYieldModal');
+        const editYieldModal = document.getElementById('editYieldModal');
+        const addYieldForm = document.getElementById('addYieldForm');
+        const editYieldForm = document.getElementById('editYieldForm');
+        const totalYieldsCount = document.getElementById('total-yields-count');
+        const avgYield = document.getElementById('avg-yield');
+        const lastHarvestDate = document.getElementById('last-harvest-date');
+        const growthRate = document.getElementById('growth-rate');
+        const timeframeControls = document.getElementById('timeframe-controls');
+
+        let allYieldRecords = [];
+        let currentChart = null;
+
+        // Check authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        const fullName = `${userData.firstName} ${userData.surname || userData.lastName || ''}`;
+                        userDisplayName.textContent = fullName;
+                        userDisplayEmail.textContent = userData.email;
+                        
+                        // Update sidebar avatar
+                        const avatar = document.getElementById('sidebar-avatar');
+                        if (userData.photoURL) {
+                            avatar.src = userData.photoURL;
+                        } else {
+                            avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.surname || userData.firstName}`;
+                        }
+                        
+                        // Load yield history
+                        await loadYieldHistory();
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            } else {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Logout functionality
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).then(() => {
+                window.location.href = '../index.html';
+            });
+        });
+
+        // Load yield history
+        async function loadYieldHistory() {
+            try {
+                const user = auth.currentUser;
+                const q = query(collection(db, "yield_records"), where("farmerId", "==", user.uid));
+                const querySnapshot = await getDocs(q);
+                
+                allYieldRecords = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allYieldRecords.push({
+                        id: doc.id,
+                        ...data,
+                        harvestDate: data.harvestDate || data.date || ''
+                    });
+                });
+                
+                // Sort by date descending
+                allYieldRecords.sort((a, b) => new Date(b.harvestDate) - new Date(a.harvestDate));
+                
+                renderYieldTable(allYieldRecords);
+                updateStats();
+                renderChart();
+            } catch (error) {
+                console.error("Error loading yield history:", error);
+            }
+        }
+
+        // Render yield table
+        function renderYieldTable(records) {
+            if (records.length === 0) {
+                yieldTableBody.innerHTML = `
+                    <tr id="no-yield-row">
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-inbox text-4xl text-slate-300 mb-3"></i>
+                                <p class="text-slate-500 font-medium">No yield records found</p>
+                                <p class="text-slate-400 text-sm mt-1">Start by adding your first yield record</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            records.forEach(record => {
+                const date = new Date(record.harvestDate);
+                const formattedDate = date.toLocaleDateString();
+                
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${formattedDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-semibold">${record.yieldAmount} kg</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                                record.quality === 'Grade A' ? 'bg-green-100 text-green-800' :
+                                record.quality === 'Grade B' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }">
+                                ${record.quality}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.weather || 'N/A'}</td>
+                        <td class="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">${record.notes || 'No notes'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="editYieldRecord('${record.id}')" class="text-lime-600 hover:text-lime-900 mr-3">
+                                <i class="fa-solid fa-edit"></i>
+                            </button>
+                            <button onclick="deleteYieldRecord('${record.id}')" class="text-red-600 hover:text-red-900">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            yieldTableBody.innerHTML = html;
+        }
+
+        // Update stats
+        function updateStats() {
+            const total = allYieldRecords.length;
+            totalYieldsCount.textContent = total;
+            
+            if (total > 0) {
+                const totalYield = allYieldRecords.reduce((sum, record) => sum + (parseFloat(record.yieldAmount) || 0), 0);
+                const average = totalYield / total;
+                avgYield.textContent = `${average.toFixed(1)} kg`;
+                
+                // Last harvest date
+                if (allYieldRecords.length > 0) {
+                    const lastHarvest = new Date(allYieldRecords[0].harvestDate);
+                    lastHarvestDate.textContent = lastHarvest.toLocaleDateString();
+                }
+                
+                // Calculate growth rate (simplified)
+                if (total >= 2) {
+                    const recentYield = parseFloat(allYieldRecords[0].yieldAmount) || 0;
+                    const previousYield = parseFloat(allYieldRecords[1].yieldAmount) || 0;
+                    if (previousYield > 0) {
+                        const growth = ((recentYield - previousYield) / previousYield) * 100;
+                        growthRate.textContent = `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+                        growthRate.className = growth >= 0 ? 'text-2xl font-bold text-green-600' : 'text-2xl font-bold text-red-600';
+                    } else {
+                        growthRate.textContent = '0%';
+                        growthRate.className = 'text-2xl font-bold text-slate-800';
+                    }
+                } else {
+                    growthRate.textContent = 'N/A';
+                    growthRate.className = 'text-2xl font-bold text-slate-800';
+                }
+            } else {
+                avgYield.textContent = '0 kg';
+                lastHarvestDate.textContent = '--';
+                growthRate.textContent = '0%';
+                growthRate.className = 'text-2xl font-bold text-slate-800';
+            }
+        }
+
+        // Render chart
+        function renderChart() {
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const ctx = document.getElementById('yieldChart').getContext('2d');
+            
+            // Prepare data for chart (last 10 records)
+            const chartData = allYieldRecords.slice(0, 10).reverse(); // Reverse to show oldest first
+            
+            const dates = chartData.map(record => {
+                const date = new Date(record.harvestDate);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+            
+            const yields = chartData.map(record => parseFloat(record.yieldAmount) || 0);
+            
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Yield (kg)',
+                        data: yields,
+                        borderColor: '#65a30d',
+                        backgroundColor: 'rgba(101, 163, 13, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#65a30d',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            padding: 12,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y} kg`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + ' kg';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Search and filter functionality
+        searchYield.addEventListener('input', filterYieldRecords);
+        filterMonth.addEventListener('change', filterYieldRecords);
+
+        function filterYieldRecords() {
+            const searchTerm = searchYield.value.toLowerCase();
+            const monthFilter = filterMonth.value;
+            
+            let filtered = allYieldRecords;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(record => 
+                    record.yieldAmount.toString().includes(searchTerm) ||
+                    (record.quality && record.quality.toLowerCase().includes(searchTerm)) ||
+                    (record.weather && record.weather.toLowerCase().includes(searchTerm)) ||
+                    (record.notes && record.notes.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (monthFilter !== '') {
+                const monthIndex = parseInt(monthFilter);
+                filtered = filtered.filter(record => {
+                    const recordDate = new Date(record.harvestDate);
+                    return recordDate.getMonth() === monthIndex;
+                });
+            }
+            
+            renderYieldTable(filtered);
+        }
+
+        // Timeframe controls
+        timeframeControls.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('#timeframe-controls button').forEach(btn => {
+                    btn.className = 'chart-filter-inactive px-3 py-1.5 text-xs font-semibold rounded-lg transition';
+                });
+                e.target.className = 'chart-filter-active px-3 py-1.5 text-xs font-semibold rounded-lg transition shadow-sm shadow-lime-200';
+                // In a real implementation, you would re-render the chart based on timeframe
+            }
+        });
+
+        // Modal functions
+        addYieldRecordBtn.addEventListener('click', () => {
+            document.getElementById('addYieldForm').reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('addHarvestDate').value = today;
+            openAddYieldModal();
+        });
+
+        function openAddYieldModal() {
+            addYieldModal.classList.remove('opacity-0', 'pointer-events-none');
+            const modalContent = addYieldModal.querySelector('div');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeAddYieldModal() {
+            addYieldModal.classList.add('opacity-0', 'pointer-events-none');
+            const modalContent = addYieldModal.querySelector('div');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+        }
+
+        function openEditYieldModal() {
+            editYieldModal.classList.remove('opacity-0', 'pointer-events-none');
+            const modalContent = editYieldModal.querySelector('div');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeEditYieldModal() {
+            editYieldModal.classList.add('opacity-0', 'pointer-events-none');
+            const modalContent = editYieldModal.querySelector('div');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+        }
+
+        // Close modals on clicking outside
+        addYieldModal.addEventListener('click', (e) => {
+            if (e.target === addYieldModal) closeAddYieldModal();
+        });
+
+        editYieldModal.addEventListener('click', (e) => {
+            if (e.target === editYieldModal) closeEditYieldModal();
+        });
+
+        // Form submissions
+        addYieldForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const user = auth.currentUser;
+                const newRecord = {
+                    farmerId: user.uid,
+                    farmerName: userDisplayName.textContent,
+                    harvestDate: document.getElementById('addHarvestDate').value,
+                    yieldAmount: parseFloat(document.getElementById('addYieldAmount').value),
+                    quality: document.getElementById('addQuality').value,
+                    weather: document.getElementById('addWeather').value,
+                    notes: document.getElementById('addNotes').value,
+                    dateAdded: serverTimestamp()
+                };
+                
+                await addDoc(collection(db, "yield_records"), newRecord);
+                
+                closeAddYieldModal();
+                await loadYieldHistory();
+                alert('Yield record added successfully!');
+            } catch (error) {
+                console.error("Error adding yield record:", error);
+                alert('Error adding yield record. Please try again.');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        editYieldForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const recordId = editYieldForm.dataset.recordId;
+            if (!recordId) return;
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Updating...';
+            submitBtn.disabled = true;
+            
+            try {
+                const updatedRecord = {
+                    harvestDate: document.getElementById('editHarvestDate').value,
+                    yieldAmount: parseFloat(document.getElementById('editYieldAmount').value),
+                    quality: document.getElementById('editQuality').value,
+                    weather: document.getElementById('editWeather').value,
+                    notes: document.getElementById('editNotes').value
+                };
+                
+                await updateDoc(doc(db, "yield_records", recordId), updatedRecord);
+                
+                closeEditYieldModal();
+                await loadYieldHistory();
+                alert('Yield record updated successfully!');
+            } catch (error) {
+                console.error("Error updating yield record:", error);
+                alert('Error updating yield record. Please try again.');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Global functions for buttons
+        window.editYieldRecord = async (recordId) => {
+            try {
+                const recordDoc = await getDoc(doc(db, "yield_records", recordId));
+                if (recordDoc.exists()) {
+                    const data = recordDoc.data();
+                    
+                    document.getElementById('editHarvestDate').value = data.harvestDate || '';
+                    document.getElementById('editYieldAmount').value = data.yieldAmount || '';
+                    document.getElementById('editQuality').value = data.quality || 'Grade A';
+                    document.getElementById('editWeather').value = data.weather || 'Sunny';
+                    document.getElementById('editNotes').value = data.notes || '';
+                    
+                    editYieldForm.dataset.recordId = recordId;
+                    openEditYieldModal();
+                }
+            } catch (error) {
+                console.error("Error fetching record for edit:", error);
+            }
+        };
+
+        window.deleteYieldRecord = async (recordId) => {
+            if (confirm('Are you sure you want to delete this yield record?')) {
+                try {
+                    await deleteDoc(doc(db, "yield_records", recordId));
+                    await loadYieldHistory();
+                    alert('Yield record deleted successfully!');
+                } catch (error) {
+                    console.error("Error deleting yield record:", error);
+                    alert('Error deleting yield record. Please try again.');
+                }
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "axe/forms": "off",
+    "axe/name-role-value": "off",
+    "axe/text-alternatives": [
+      "default",
+      {
+        "frame-title": "off",
+        "image-alt": "off"
+      }
+    ],
+    "axe/language": [
+      "default",
+      {
+        "html-has-lang": "off"
+      }
+    ],
+    "axe/parsing": [
+      "default",
+      {
+        "duplicate-id-active": "off"
+      }
+    ]
+  }
+}

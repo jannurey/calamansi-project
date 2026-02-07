@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yield History | Calamansi Yield System</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar for Table */
+        .table-container::-webkit-scrollbar { height: 8px; }
+        .table-container::-webkit-scrollbar-track { background: #f1f5f9; }
+        .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        lime: {
+                            50: '#f7fee7',
+                            100: '#ecfccb',
+                            500: '#84cc16',
+                            600: '#65a30d',
+                            700: '#4d7c0f',
+                            900: '#365314',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
+     
+    <!---Side bar-->
+    <aside class="w-64 bg-lime-900 text-white hidden md:flex flex-col z-20 flex-shrink-0 transition-all duration-300">
+        <div class="p-6 flex items-center gap-3 border-b border-lime-800">
+            <img src="/images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
+            <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+        </div>
+        <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                <i class="fa-solid fa-gauge-high w-5"></i> Dashboard
+            </a>
+            <a href="farmers.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                <i class="fa-solid fa-users w-5"></i> Farmers
+            </a>
+            <a href="farmer_request.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                <i class="fa-solid fa-clipboard-check w-5"></i> Manage Requests
+            </a>
+            <a href="yield_history.html" class="flex items-center gap-3 px-4 py-3 bg-lime-800 rounded-xl text-white font-medium shadow-inner">
+                <i class="fa-solid fa-clock-rotate-left w-5"></i> Yield History
+            </a>
+            <a href="settings.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                <i class="fa-solid fa-gear w-5"></i> Settings
+            </a>
+        </nav>
+        
+        <div class="p-4 border-t border-lime-800">
+            <div class="flex items-center gap-3 p-3 rounded-lg bg-lime-800/50">
+                <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" class="w-8 h-8 rounded-full bg-white" alt="Admin">
+                
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate" id="user-display-name">Admin</p>
+                    <p class="text-xs text-lime-300 truncate" id="user-display-email">Loading...</p>
+                </div>
+                
+                <button id="btn-logout-trigger" class="text-lime-300 hover:text-white transition-colors p-2 rounded-md hover:bg-lime-700/50" title="Sign Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+       <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <button class="md:hidden text-slate-500 hover:text-lime-600"><i class="fa-solid fa-bars text-xl"></i></button>
+                <h1 class="text-xl font-bold text-slate-800">Harvest Logs</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="p-2 text-slate-400 hover:text-lime-600 transition relative">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                <button onclick="openAddYieldModal()" class="hidden sm:flex bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition items-center gap-2 shadow-md shadow-lime-200">
+                    <i class="fa-solid fa-plus"></i> Add Yield Record
+                </button>
+                <button onclick="app.exportData()" class="hidden sm:flex bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition items-center gap-2">
+                    <i class="fa-solid fa-download"></i> Export CSV
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl"><i class="fa-solid fa-truck"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Dispatched</p>
+                            <h3 class="text-xl font-bold text-slate-800" id="total-dispatched">--</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl"><i class="fa-solid fa-warehouse"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Stored</p>
+                            <h3 class="text-xl font-bold text-slate-800" id="total-stored">--</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fa-solid fa-chart-line"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Yields</p>
+                            <h3 class="text-xl font-bold text-slate-800" id="total-yields">-- kg</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl"><i class="fa-solid fa-calendar-plus"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Records</p>
+                            <h3 class="text-xl font-bold text-slate-800" id="total-records">--</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message Container -->
+                <div id="error-container" class="hidden mb-4 p-4 rounded-lg border-l-4 bg-red-50 border-red-400 text-red-700" style="display: none;">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm" id="error-message"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Table Section -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[600px]">
+                    
+                    <!-- Filters Toolbar -->
+                    <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between bg-slate-50/50">
+                        <div class="relative w-full sm:w-96">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" id="searchInput" placeholder="Search by Batch ID, Farmer, or Location..." 
+                                class="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition">
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="gradeFilter" class="bg-white border border-slate-300 text-slate-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-lime-500">
+                                <option value="All">All Grades</option>
+                                <option value="Grade A">Grade A</option>
+                                <option value="Grade B">Grade B</option>
+                                <option value="Grade C">Grade C</option>
+                            </select>
+                            <button onclick="window.app.refreshTable()" class="bg-white border border-slate-300 text-slate-600 p-2 rounded-lg hover:bg-slate-50 hover:text-lime-600 transition">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Table Container -->
+                    <div class="flex-1 overflow-auto table-container relative">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                                <tr>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch ID</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Farmer</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Weight (kg)</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Quality</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yield-history-table-body" class="divide-y divide-slate-100 bg-white">
+                                
+                            </tbody>
+                        </table>
+                        
+                        <!-- Empty State (Hidden by default) -->
+                        <div id="emptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-white">
+                            <i class="fa-solid fa-box-open text-4xl mb-3 text-slate-300"></i>
+                            <p class="text-sm">No records found matching your filters.</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="p-4 border-t border-slate-200 bg-white flex items-center justify-between">
+                        <p class="text-sm text-slate-500">Loading...</p>
+                        <div class="flex gap-2" id="pagination-buttons">
+                            <button class="px-3 py-1 text-sm border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50 disabled:opacity-50" disabled><i class="fa-solid fa-chevron-left"></i></button>
+                            <button class="px-3 py-1 text-sm border border-lime-500 bg-lime-50 text-lime-700 rounded-md font-medium">1</button>
+                            <button class="px-3 py-1 text-sm border border-slate-300 rounded-md text-slate-600 hover:bg-slate-50 disabled"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    
+  
+    <!-- Logic -->
+    <script type="module">
+        import { app } from '../firebase-config.js';
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc,
+            collection,
+            query,
+            where,
+            getDocs,
+            addDoc,
+            updateDoc,
+            deleteDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM Elements
+        const userDisplayName = document.getElementById('user-display-name');
+        const userDisplayEmail = document.getElementById('user-display-email');
+        const yieldHistoryTableBody = document.getElementById('yield-history-table-body');
+        const totalDispatched = document.getElementById('total-dispatched');
+        const totalStored = document.getElementById('total-stored');
+        const totalYields = document.getElementById('total-yields');
+        const totalRecords = document.getElementById('total-records');
+        const searchInput = document.getElementById('searchInput');
+        const gradeFilter = document.getElementById('gradeFilter');
+        const paginationInfo = document.querySelector('.text-slate-500');
+        
+        let allYieldRecords = [];
+        let currentPage = 1;
+        const recordsPerPage = 10;
+
+        // Check authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        const fullName = `${userData.firstName} ${userData.surname || userData.lastName || ''}`;
+                        userDisplayName.textContent = fullName;
+                        userDisplayEmail.textContent = userData.email;
+                        
+                        // Update sidebar avatar
+                        const avatar = document.getElementById('sidebar-avatar');
+                        if (userData.photoURL) {
+                            avatar.src = userData.photoURL;
+                        } else {
+                            avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.surname || userData.firstName}`;
+                        }
+                        
+                        // Load yield records
+                        await loadYieldRecords();
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            } else {
+                window.location.href = '../index.html';
+            }
+        });
+
+        // Load yield records from Firestore
+        async function loadYieldRecords() {
+            try {
+                const q = query(collection(db, "yield_records"));
+                const querySnapshot = await getDocs(q);
+                
+                allYieldRecords = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    allYieldRecords.push({
+                        id: doc.id,
+                        ...data
+                    });
+                });
+                
+                // Sort by harvest date descending
+                allYieldRecords.sort((a, b) => {
+                    const dateA = a.harvestDate instanceof Date ? a.harvestDate : new Date(a.harvestDate || a.date || '');
+                    const dateB = b.harvestDate instanceof Date ? b.harvestDate : new Date(b.harvestDate || b.date || '');
+                    return dateB - dateA;
+                });
+                
+                updateSummaryStats();
+                renderYieldTable(allYieldRecords);
+            } catch (error) {
+                console.error("Error loading yield records:", error);
+                showError("Error loading yield records. Please try again later.");
+            }
+        }
+
+        // Update summary statistics
+        function updateSummaryStats() {
+            // Calculate total yields (sum of all yield amounts)
+            const totalYieldValue = allYieldRecords.reduce((sum, record) => {
+                const amount = parseFloat(record.yieldAmount || record.harvestYield || 0);
+                return sum + (isNaN(amount) ? 0 : amount);
+            }, 0);
+            
+            // Calculate dispatch and storage stats
+            const dispatched = allYieldRecords.filter(record => record.status === 'dispatched').length;
+            const stored = allYieldRecords.filter(record => record.status === 'stored').length;
+            
+            totalDispatched.textContent = dispatched;
+            totalStored.textContent = stored;
+            totalYields.textContent = totalYieldValue.toFixed(2) + ' kg';
+            totalRecords.textContent = allYieldRecords.length;
+        }
+
+        // Render yield records table
+        function renderYieldTable(records) {
+            if (records.length === 0) {
+                yieldHistoryTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fa-solid fa-box-open text-4xl text-slate-300 mb-3"></i>
+                                <p class="text-slate-500 font-medium">No yield records found</p>
+                                <p class="text-slate-400 text-sm mt-1">New yield records will appear here when added</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('emptyState').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('emptyState').classList.add('hidden');
+            
+            let html = '';
+            records.forEach(record => {
+                const harvestDate = new Date(record.harvestDate || record.date || '');
+                const formattedDate = harvestDate.toLocaleDateString();
+                
+                // Extract numeric value from yield amount
+                const yieldValue = record.yieldAmount || record.harvestYield || '0';
+                const numericValue = parseFloat(yieldValue.toString().replace(/[^\d.-]/g, ''));
+                
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${formattedDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.batchId || record.batch_id || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${record.farmerName || record.FarmerName || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${numericValue} kg</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${getQualityClass(record.quality)}">
+                                ${record.quality || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(record.status)}">
+                                ${record.status || 'N/A'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button onclick="openYieldDetailsModal('${record.id}', ${JSON.stringify(record).replace(/'/g, "\\'")})" class="text-lime-600 hover:text-lime-900 mr-3">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            yieldHistoryTableBody.innerHTML = html;
+        }
+
+        // Helper function to get quality class
+        function getQualityClass(quality) {
+            switch(quality) {
+                case 'Grade A':
+                    return 'bg-green-100 text-green-800';
+                case 'Grade B':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'Grade C':
+                    return 'bg-red-100 text-red-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Helper function to get status class
+        function getStatusClass(status) {
+            switch(status) {
+                case 'processing':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'stored':
+                    return 'bg-blue-100 text-blue-800';
+                case 'dispatched':
+                    return 'bg-green-100 text-green-800';
+                case 'completed':
+                    return 'bg-purple-100 text-purple-800';
+                case 'pending':
+                    return 'bg-gray-100 text-gray-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Search and filter functionality
+        searchInput.addEventListener('input', filterYieldRecords);
+        gradeFilter.addEventListener('change', filterYieldRecords);
+
+        function filterYieldRecords() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const gradeFilterValue = gradeFilter.value;
+            
+            let filtered = allYieldRecords;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(record => 
+                    (record.batchId && record.batchId.toLowerCase().includes(searchTerm)) ||
+                    (record.batch_id && record.batch_id.toLowerCase().includes(searchTerm)) ||
+                    (record.farmerName && record.farmerName.toLowerCase().includes(searchTerm)) ||
+                    (record.FarmerName && record.FarmerName.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (gradeFilterValue && gradeFilterValue !== 'All') {
+                filtered = filtered.filter(record => record.quality === gradeFilterValue);
+            }
+            
+            renderYieldTable(filtered);
+        }
+
+        // Global functions for modals
+        window.openYieldDetailsModal = (id, record) => {
+            document.getElementById('modalBatchId').textContent = record.batchId || record.batch_id || 'N/A';
+            document.getElementById('modalFarmer').textContent = record.farmerName || record.FarmerName || 'N/A';
+            
+            const harvestDate = new Date(record.harvestDate || record.date || '');
+            document.getElementById('modalDate').textContent = harvestDate.toLocaleDateString();
+            
+            const yieldValue = record.yieldAmount || record.harvestYield || '0';
+            const numericValue = parseFloat(yieldValue.toString().replace(/[^\d.-]/g, ''));
+            document.getElementById('modalWeight').textContent = numericValue + ' kg';
+            
+            document.getElementById('modalGrade').textContent = record.quality || 'N/A';
+            document.getElementById('modalNotes').textContent = record.notes || record.Inspector_notes || 'No notes available.';
+            
+            // Store record ID for edit/delete operations
+            window.currentRecordId = id;
+            
+            const modal = document.getElementById('detailsModal');
+            const modalContent = modal.querySelector('div');
+            
+            modal.classList.remove('hidden', 'opacity-0');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        };
+
+        window.closeYieldModal = () => {
+            const modal = document.getElementById('detailsModal');
+            const modalContent = modal.querySelector('div');
+            
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        };
+
+        // Edit and delete functions
+        window.app = window.app || {};
+        window.app.ui = window.app.ui || {};
+        
+        window.app.ui.editRecord = () => {
+            alert('Edit functionality would be implemented here.');
+            // In a real implementation, this would open an edit form
+            closeYieldModal();
+        };
+        
+        window.app.ui.deleteRecord = async () => {
+            if (!confirm('Are you sure you want to delete this yield record?')) {
+                return;
+            }
+            
+            try {
+                await deleteDoc(doc(db, "yield_records", window.currentRecordId));
+                closeYieldModal();
+                await loadYieldRecords();
+                alert('Yield record deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting yield record:', error);
+                alert('Error deleting yield record. Please try again.');
+            }
+        };
+
+        // Close modal on clicking outside
+        document.getElementById('detailsModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('detailsModal')) window.closeYieldModal();
+        });
+
+        // Function to show error messages
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            
+            errorMessage.textContent = message;
+            errorContainer.style.display = 'block';
+            
+            setTimeout(() => {
+                errorContainer.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+    
+
+    <!-- Add Yield Record Modal -->
+    <div id="addYieldModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl transform scale-95 transition-transform duration-300 p-6 relative">
+            <button onclick="closeAddYieldModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Add New Yield Record</h3>
+            <p class="text-sm text-slate-500 mb-6">Enter the details for a new harvest record</p>
+            
+            <form id="addYieldForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Farmer Name</label>
+                        <input type="text" id="addFarmerName" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. Juan Dela Cruz">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Batch ID</label>
+                        <input type="text" id="addBatchId" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. YC-1234567">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Harvest Date</label>
+                        <input type="date" id="addHarvestDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Harvest Yield</label>
+                        <input type="text" id="addHarvestYield" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. 50 kg">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Quality</label>
+                        <select id="addQuality" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                            <option value="">Select Quality</option>
+                            <option value="Grade A">Grade A</option>
+                            <option value="Grade B">Grade B</option>
+                            <option value="Grade C">Grade C</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                        <select id="addStatus" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
+                            <option value="">Select Status</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Stored">Stored</option>
+                            <option value="Dispatched">Dispatched</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Inspector Notes</label>
+                    <textarea id="addInspectorNotes" rows="3" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="Enter any relevant notes from the inspector..."></textarea>
+                </div>
+                
+                <div class="flex gap-3 pt-4 border-t border-slate-200">
+                    <button type="button" onclick="closeAddYieldModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-md shadow-lime-200">
+                        <i class="fa-solid fa-save mr-2"></i>Save Record
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl transform scale-95 transition-transform duration-300 p-6 relative">
+            <button onclick="closeYieldModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Batch Details</h3>
+            <p class="text-sm text-slate-500 mb-6" id="modalBatchId">#BATCH-000</p>
+            
+            <div class="space-y-4">
+                <div class="bg-slate-50 p-4 rounded-lg flex justify-between border border-slate-100">
+                    <div>
+                        <p class="text-xs text-slate-500">Farmer</p>
+                        <p class="font-medium text-slate-900" id="modalFarmer">Name</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-slate-500">Harvest Date</p>
+                        <p class="font-medium text-slate-900" id="modalDate">Jan 01, 2024</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border border-slate-200 p-3 rounded-lg">
+                        <p class="text-xs text-slate-500 mb-1">Total Weight</p>
+                        <p class="text-lg font-bold text-lime-600" id="modalWeight">0 kg</p>
+                    </div>
+                    <div class="border border-slate-200 p-3 rounded-lg">
+                        <p class="text-xs text-slate-500 mb-1">Quality Grade</p>
+                        <p class="text-lg font-bold" id="modalGrade">A</p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 mb-2">Inspector Notes</p>
+                    <p class="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 italic" id="modalNotes">"Fruit size is consistent. Coloration is optimal green-yellow. Moisture content within safe limits."</p>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3 pt-4 border-t border-slate-200">
+                    <button onclick="window.app.ui.editRecord()" class="flex-1 bg-lime-600 hover:bg-lime-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                        <i class="fa-solid fa-edit mr-2"></i>Edit
+                    </button>
+                    <button onclick="window.app.ui.deleteRecord()" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                        <i class="fa-solid fa-trash mr-2"></i>Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Add Yield Record Modal Functions
+        const addYieldModal = document.getElementById('addYieldModal');
+        const addYieldModalContent = addYieldModal.querySelector('div');
+        
+        function openAddYieldModal() {
+            document.getElementById('addYieldForm').reset();
+            addYieldModal.classList.remove('hidden', 'opacity-0');
+            addYieldModalContent.classList.remove('scale-95');
+            addYieldModalContent.classList.add('scale-100');
+        }
+        
+        function closeAddYieldModal() {
+            addYieldModal.classList.add('opacity-0');
+            addYieldModalContent.classList.remove('scale-100');
+            addYieldModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                addYieldModal.classList.add('hidden');
+            }, 300);
+        }
+        
+        // Close modal on clicking outside
+        addYieldModal.addEventListener('click', (e) => {
+            if (e.target === addYieldModal) closeAddYieldModal();
+        });
+        
+        // Handle form submission
+        document.getElementById('addYieldForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const newRecord = {
+                    FarmerName: document.getElementById('addFarmerName').value,
+                    batch_id: document.getElementById('addBatchId').value,
+                    harvestDate: document.getElementById('addHarvestDate').value,
+                    date: document.getElementById('addHarvestDate').value,
+                    harvestYield: document.getElementById('addHarvestYield').value,
+                    quality: document.getElementById('addQuality').value,
+                    status: document.getElementById('addStatus').value,
+                    Inspector_notes: document.getElementById('addInspectorNotes').value
+                };
+                
+                // Call the add function from yield_history.js
+                if (window.app && window.app.addYieldRecord) {
+                    await window.app.addYieldRecord(newRecord);
+                    closeAddYieldModal();
+                    alert('Yield record added successfully!');
+                } else {
+                    alert('Error: Could not add record. Please make sure the page is fully loaded.');
+                }
+            } catch (error) {
+                console.error('Error adding yield record:', error);
+                alert('Error adding record: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+
+    <!-- LOGOUT MODAL -->
+    <div id="logout-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+        <div id="logout-backdrop" class="absolute inset-0 bg-black/40 opacity-0"></div>
+
+        <div id="logout-panel"
+            class="bg-white p-6 rounded-xl relative opacity-0 transform translate-y-4 transition-all">
+            <h3 class="font-bold mb-2">Sign Out</h3>
+            <p class="text-sm mb-4">Are you sure you want to log out?</p>
+
+            <div class="flex justify-end gap-2">
+                <button id="btn-cancel-logout" class="px-4 py-2 bg-slate-100 rounded">
+                    Cancel
+                </button>
+                <button id="btn-confirm-logout" class="px-4 py-2 bg-red-600 text-white rounded">
+                    Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

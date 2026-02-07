@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore Debug Test</title>
+</head>
+<body>
+    <h1>Firestore Debug Test</h1>
+    <button onclick="testFirestore()">Test Firestore Connection</button>
+    <button onclick="checkCollections()">Check Collections</button>
+    <button onclick="showMyData()">Show My Data</button>
+    <div id="output"></div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_KSNVkDoOJEdOQhirt7XBNVAwhbC4ppk",
+            authDomain: "calamansisys.firebaseapp.com",
+            projectId: "calamansisys",
+            storageBucket: "calamansisys.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function log(message) {
+            console.log(message);
+            document.getElementById('output').innerHTML += '<p>' + message + '</p>';
+        }
+
+        window.testFirestore = async function() {
+            try {
+                log('🔄 Testing Firestore connection...');
+                const testCollection = collection(db, 'users');
+                const snapshot = await getDocs(testCollection);
+                log('✅ Firestore connected! Found ' + snapshot.docs.length + ' users');
+            } catch (error) {
+                log('❌ Firestore error: ' + error.message);
+            }
+        }
+
+        window.checkCollections = async function() {
+            const collections = ['monthlyYieldSummary', 'farm_history', 'users', 'Farm_information'];
+
+            for (const collName of collections) {
+                try {
+                    log(`\n📂 Checking ${collName}...`);
+                    const snapshot = await getDocs(collection(db, collName));
+                    log(`✅ ${collName}: ${snapshot.docs.length} documents`);
+
+                    if (snapshot.docs.length > 0 && snapshot.docs.length <= 3) {
+                        snapshot.docs.forEach((doc, i) => {
+                            log(`   Doc ${i+1}: ${JSON.stringify(doc.data())}`);
+                        });
+                    }
+                } catch (error) {
+                    log(`❌ ${collName}: ${error.message}`);
+                }
+            }
+        }
+
+        window.showMyData = async function() {
+            try {
+                log('\n🔍 Checking monthlyYieldSummary data...');
+                const snapshot = await getDocs(collection(db, 'monthlyYieldSummary'));
+                log(`Found ${snapshot.docs.length} documents`);
+
+                snapshot.docs.forEach((doc, i) => {
+                    log(`\n--- Document ${i+1} ---`);
+                    const data = doc.data();
+                    log('Field names: ' + Object.keys(data).join(', '));
+                    log('Raw data: ' + JSON.stringify(data, null, 2));
+                });
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
