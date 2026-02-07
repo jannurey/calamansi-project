@@ -34,12 +34,19 @@
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
+    <!-- Sidebar Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
 
   <!---Side bar-->
-         <aside class="w-64 bg-lime-900 text-white hidden md:flex flex-col z-20 flex-shrink-0 transition-all duration-300">
-            <div class="p-6 flex items-center gap-3 border-b border-lime-800">
-                <img src="/images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
-                <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+         <aside id="sidebar" class="w-64 bg-lime-900 text-white fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 md:static flex flex-col z-30 flex-shrink-0 transition-all duration-300">
+            <div class="p-6 flex items-center justify-between border-b border-lime-800">
+                <div class="flex items-center gap-3">
+                    <img src="/images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
+                    <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+                </div>
+                <button id="sidebar-close" class="md:hidden text-lime-200 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
             </div>
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
                 <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
@@ -79,7 +86,7 @@
         
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 flex-shrink-0">
             <div class="flex items-center gap-2 md:hidden">
-                <button class="text-slate-600"><i class="fa-solid fa-bars text-xl"></i></button>
+                <button id="sidebar-toggle" class="text-slate-600"><i class="fa-solid fa-bars text-xl"></i></button>
                 <span class="font-bold text-lime-900">Requests</span>
             </div>
             <div class="hidden md:block">
@@ -102,7 +109,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Pending Approval</p>
-                            <h3 class="text-2xl font-bold text-slate-800">12</h3>
+                            <h3 class="text-2xl font-bold text-slate-800" id="pending-count">0</h3>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -111,7 +118,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Approved Today</p>
-                            <h3 class="text-2xl font-bold text-slate-800">24</h3>
+                            <h3 class="text-2xl font-bold text-slate-800" id="approved-count">0</h3>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -120,7 +127,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">Rejected</p>
-                            <h3 class="text-2xl font-bold text-slate-800">3</h3>
+                            <h3 class="text-2xl font-bold text-slate-800" id="rejected-count">0</h3>
                         </div>
                     </div>
                 </div>
@@ -205,6 +212,7 @@
     </div>
     <script type="module">
         import { app } from '../firebase-config.js';
+        import { initAuthSidebar } from '../js/Auth.js';
         import { 
             getAuth, 
             onAuthStateChanged,
@@ -229,38 +237,24 @@
         const userDisplayName = document.getElementById('user-display-name');
         const userDisplayEmail = document.getElementById('user-display-email');
         const requestsTableBody = document.getElementById('requests-table-body');
-        const pendingCount = document.querySelector('.bg-orange-50').closest('.flex').querySelector('.text-2xl.font-bold');
-        const approvedCount = document.querySelector('.bg-emerald-50').closest('.flex').querySelector('.text-2xl.font-bold');
-        const rejectedCount = document.querySelector('.bg-red-50').closest('.flex').querySelector('.text-2xl.font-bold');
+        const pendingCount = document.getElementById('pending-count');
+        const approvedCount = document.getElementById('approved-count');
+        const rejectedCount = document.getElementById('rejected-count');
         const searchInput = document.querySelector('input[placeholder="Search by Farmer Name or ID..."]');
         const filterSelect = document.querySelector('select[aria-label="State"]');
         
         let allRequests = [];
 
+        initAuthSidebar();
+
         // Check authentication
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
-                    const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        const fullName = `${userData.firstName} ${userData.surname || userData.lastName || ''}`;
-                        userDisplayName.textContent = fullName;
-                        userDisplayEmail.textContent = userData.email;
-                        
-                        // Update sidebar avatar
-                        const avatar = document.getElementById('sidebar-avatar');
-                        if (userData.photoURL) {
-                            avatar.src = userData.photoURL;
-                        } else {
-                            avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.surname || userData.firstName}`;
-                        }
-                        
-                        // Load requests
-                        await loadRequests();
-                    }
+                    // Load requests
+                    await loadRequests();
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error("Error fetching data:", error);
                 }
             } else {
                 window.location.href = '../index.html';

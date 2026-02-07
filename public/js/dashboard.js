@@ -13,6 +13,7 @@ import {
     getDocs, 
     onSnapshot 
 } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+import { initAuthSidebar } from './Auth.js';
 
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -299,32 +300,9 @@ class DashboardApp {
             responseBox: document.getElementById('ai-response-box')
         };
 
-        this.initAuthListener(); // Initialize listener for live user data
+        initAuthSidebar(); // Initialize sidebar profile listener
         this.loadSensorsFromCache();
         this.init();
-    }
-
-    initAuthListener() {
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Use profile cache for custom names, fallback to Firebase Display Name or generic Admin
-                const cached = JSON.parse(localStorage.getItem(USER_CACHE_KEY) || '{}');
-                const fullName = cached.firstName ? `${cached.firstName} ${cached.lastName}` : (user.displayName || "Admin");
-                
-                if (this.ui.sidebarName) this.ui.sidebarName.innerText = fullName;
-                if (this.ui.sidebarEmail) this.ui.sidebarEmail.innerText = user.email;
-                
-                // Set photo if available in Firebase or cached custom profile
-                if (user.photoURL && this.ui.sidebarImg) {
-                    this.ui.sidebarImg.src = user.photoURL;
-                } else if (cached.photoURL && this.ui.sidebarImg) {
-                    this.ui.sidebarImg.src = cached.photoURL;
-                }
-            } else {
-                // Redirect to login if not authenticated
-                window.location.href = 'index.html';
-            }
-        });
     }
 
     loadSensorsFromCache() {

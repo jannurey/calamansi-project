@@ -44,12 +44,19 @@
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
+    <!-- Sidebar Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden"></div>
      
     <!---Side bar-->
-    <aside class="w-64 bg-lime-900 text-white hidden md:flex flex-col z-20 flex-shrink-0 transition-all duration-300">
-        <div class="p-6 flex items-center gap-3 border-b border-lime-800">
-            <img src="/images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
-            <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+    <aside id="sidebar" class="w-64 bg-lime-900 text-white fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 md:static flex flex-col z-30 flex-shrink-0 transition-all duration-300">
+        <div class="p-6 flex items-center justify-between border-b border-lime-800">
+            <div class="flex items-center gap-3">
+                <img src="/images/cys_logo.png" alt="CYS Logo" class="w-20 h-20 object-contain"/>
+                <span class="font-bold text-lg tracking-wide">Calamansi Yield System</span>
+            </div>
+            <button id="sidebar-close" class="md:hidden text-lime-200 hover:text-white">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div>
         <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
             <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
@@ -91,7 +98,7 @@
         <!-- Header -->
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-10 flex-shrink-0">
             <div class="flex items-center gap-3">
-                <button class="md:hidden text-slate-500 hover:text-lime-600"><i class="fa-solid fa-bars text-xl"></i></button>
+                <button id="sidebar-toggle" class="md:hidden text-slate-500 hover:text-lime-600"><i class="fa-solid fa-bars text-xl"></i></button>
                 <h1 class="text-xl font-bold text-slate-800">Harvest Logs</h1>
             </div>
             <div class="flex items-center gap-3">
@@ -224,6 +231,7 @@
     <!-- Logic -->
     <script type="module">
         import { app } from '../firebase-config.js';
+        import { initAuthSidebar } from '../js/Auth.js';
         import { 
             getAuth, 
             onAuthStateChanged,
@@ -262,30 +270,16 @@
         let currentPage = 1;
         const recordsPerPage = 10;
 
+        initAuthSidebar();
+
         // Check authentication
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
-                    const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if (userDoc.exists()) {
-                        const userData = userDoc.data();
-                        const fullName = `${userData.firstName} ${userData.surname || userData.lastName || ''}`;
-                        userDisplayName.textContent = fullName;
-                        userDisplayEmail.textContent = userData.email;
-                        
-                        // Update sidebar avatar
-                        const avatar = document.getElementById('sidebar-avatar');
-                        if (userData.photoURL) {
-                            avatar.src = userData.photoURL;
-                        } else {
-                            avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.surname || userData.firstName}`;
-                        }
-                        
-                        // Load yield records
-                        await loadYieldRecords();
-                    }
+                    // Load yield records
+                    await loadYieldRecords();
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error("Error fetching data:", error);
                 }
             } else {
                 window.location.href = '../index.html';

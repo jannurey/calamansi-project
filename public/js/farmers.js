@@ -113,16 +113,12 @@ const app = {
     logoutModal: document.getElementById('logout-modal'),
     searchInput: document.getElementById('searchInput'),
     locFilter: document.getElementById('locationFilter'),
-    adminName: document.getElementById('admin-name'),
-    adminEmail: document.getElementById('admin-email'),
-    adminImg: document.getElementById('admin-photo'), 
     allFarmers: [],
 
     init() {
         console.log('🚀 Initializing Farmers App...');
         initAuthSidebar(); // Add this line
         this.setupListeners();
-        this.loadUserProfile();
         console.log('📡 Setting up farmers subscription...');
         FarmerSDK.subscribeToFarmers((data) => {
             console.log('📊 Farmers data received:', data.length, 'farmers');
@@ -131,38 +127,6 @@ const app = {
             this.updateStats(data);
             this.updateLocationDropdown(data);
             this.handleFilter();
-        });
-    },
-
-    loadUserProfile() {
-        console.log('👤 Checking authentication state...');
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                console.log('✅ User authenticated:', user.email, user.uid);
-                const userDocRef = doc(db, "users", user.uid);
-                onSnapshot(userDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        console.log('📄 User profile loaded:', docSnap.data());
-                        const userData = docSnap.data();
-                        if (this.adminName) {
-                            this.adminName.innerText = `${userData.firstName} ${userData.surname || userData.lastName || ''}`;
-                        }
-                        if (this.adminEmail) {
-                            this.adminEmail.innerText = userData.email;
-                        }
-                        if (this.adminImg && userData.photoURL) {
-                            this.adminImg.src = userData.photoURL;
-                        } else if (this.adminImg) {
-                            this.adminImg.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.surname || 'Admin'}`;
-                        }
-                    } else {
-                        console.log('⚠️ User document not found in Firestore');
-                    }
-                });
-            } else {
-                console.log('❌ User not authenticated, redirecting to login...');
-                window.location.href = '../index.html';
-            }
         });
     },
 

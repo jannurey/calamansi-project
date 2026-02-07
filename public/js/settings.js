@@ -24,10 +24,7 @@ class SettingsApp {
         };
         
         this.elements = {
-            sidebarName: document.getElementById('user-display-name'),
-            sidebarEmail: document.getElementById('user-display-email'),
             profileImg: document.querySelector('.w-24.h-24.rounded-full.border-4 img'),
-            sidebarImg: document.querySelector('aside img[alt="Admin"]'),
             changePhotoBtn: document.querySelector('.w-24.h-24.rounded-full.border-4'),
             removePhotoBtn: document.querySelector('button.text-xs.text-lime-600'),
             // Custom Modal Elements
@@ -157,10 +154,6 @@ class SettingsApp {
     // ...existing code...
     populateUI(data) {
         console.log('Populating UI with data:', data);
-
-        // Update sidebar with full name (first name and surname)
-        const fullName = `${data.firstName || ''} ${data.surname || ''}`.trim();
-        this.syncSidebar(fullName, data.email || '');
 
         // Update profile image if available
         if (data.photoURL) this.updateAvatarUI(data.photoURL);
@@ -326,12 +319,6 @@ class SettingsApp {
     
     updateAvatarUI(url) {
         if (this.elements.profileImg) this.elements.profileImg.src = url;
-        if (this.elements.sidebarImg) this.elements.sidebarImg.src = url;
-    }
-
-    syncSidebar(fullName, email) {
-        if (this.elements.sidebarName) this.elements.sidebarName.innerText = fullName || "User";
-        if (this.elements.sidebarEmail) this.elements.sidebarEmail.innerText = email || "";
     }
 
     setButtonState(btn, text, isLoading) {
