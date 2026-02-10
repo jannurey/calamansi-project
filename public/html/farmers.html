@@ -16,6 +16,10 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; }
+        #accountActionsMenu {
+            position: absolute !important;
+            z-index: 1000;
+        }
     </style>
 
     <script>
@@ -155,6 +159,17 @@
                 <div id="farmersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 </div>
 
+                <!-- Account Actions Dropdown Menu -->
+                <div id="accountActionsMenu" class="fixed z-50 hidden bg-white rounded-lg shadow-lg border border-slate-200 w-48 py-2">
+                    <button id="setStatusBtn" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 text-amber-600 hover:text-amber-700 flex items-center gap-2">
+                        <i class="fa-solid fa-user-clock text-xs"></i> <span id="statusActionText">Set Inactive</span>
+                    </button>
+                    <hr class="my-1">
+                    <button id="deleteAccountBtn" class="w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600 hover:text-red-700 flex items-center gap-2">
+                        <i class="fa-solid fa-trash text-xs"></i> Delete Account
+                    </button>
+                </div>
+
             </div>
         </div>
     </main>
@@ -242,9 +257,14 @@
                             <p id="det-title-role" class="text-xs text-lime-600 font-bold uppercase tracking-wider">Member</p>
                     </div>
                 </div>
-                <button onclick="app.closeDetailModal()" class="text-slate-400 hover:text-slate-600 transition">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
+                <div class="flex items-center gap-3">
+                    <span id="det-status" class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 flex items-center gap-1">
+                        <i class="fa-solid fa-check"></i> Active
+                    </span>
+                    <button onclick="app.closeDetailModal()" class="text-slate-400 hover:text-slate-600 transition">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
             </div>
             <div class="flex border-b border-slate-100 px-6 bg-white">
                 <button onclick="app.switchTab('profile')" id="tab-profile" class="py-4 px-6 text-sm font-bold border-b-2 border-lime-600 text-lime-600 transition">

@@ -134,17 +134,17 @@
 
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                     
-                    <div class="p-4 border-b border-slate-200 flex flex-col sm:row gap-4 justify-between bg-slate-50/50">
+                    <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between bg-slate-50/50">
                         <div class="relative w-full sm:w-96">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
                             <input type="text" placeholder="Search by Farmer Name or ID..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500 transition">
                         </div>
                         <div class="flex gap-2">
-                            <select aria-label="State" class="bg-white border border-slate-300 text-slate-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-lime-500">
-                                <option>All Types</option>
-                                <option>Fertilizer Request</option>
-                                <option>Harvest Validation</option>
-                                <option>Equipment Rental</option>
+                            <select id="statusFilter" aria-label="Status Filter" class="bg-white border border-slate-300 text-slate-600 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-lime-500">
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
                             </select>
                         </div>
                     </div>
@@ -154,7 +154,7 @@
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200">
                                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Farmer</th>
-                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Request Type</th>
+                                    <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Yield Amount</th>
                                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date Submitted</th>
                                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                                     <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Actions</th>
@@ -192,11 +192,23 @@
                     <span id="modalFarmer" class="text-slate-800 font-bold text-right"></span>
                 </div>
                 <div class="flex justify-between border-b border-slate-50 pb-4">
-                    <span class="text-slate-500 font-medium">Type</span>
+                    <span class="text-slate-500 font-medium">Batch ID</span>
+                    <span id="modalBatchId" class="text-slate-800 font-semibold"></span>
+                </div>
+                <div class="flex justify-between border-b border-slate-50 pb-4">
+                    <span class="text-slate-500 font-medium">Yield Amount</span>
                     <span id="modalType" class="px-2 py-0.5 bg-lime-50 text-lime-700 text-xs font-bold rounded uppercase"></span>
                 </div>
+                <div class="flex justify-between border-b border-slate-50 pb-4">
+                    <span class="text-slate-500 font-medium">Quality Grade</span>
+                    <span id="modalQuality" class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded"></span>
+                </div>
+                <div id="modalHarvestDate" class="flex justify-between border-b border-slate-50 pb-4 hidden">
+                    <span class="text-slate-500 font-medium">Harvest Date</span>
+                    <span class="text-slate-800 font-semibold"></span>
+                </div>
                 <div>
-                    <span class="text-slate-500 font-medium block mb-2">Message/Notes</span>
+                    <span class="text-slate-500 font-medium block mb-2">Notes</span>
                     <p id="modalMessage" class="text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-200 italic"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mt-8 pt-4 border-t border-slate-100">
@@ -241,7 +253,6 @@
         const approvedCount = document.getElementById('approved-count');
         const rejectedCount = document.getElementById('rejected-count');
         const searchInput = document.querySelector('input[placeholder="Search by Farmer Name or ID..."]');
-        const filterSelect = document.querySelector('select[aria-label="State"]');
         
         let allRequests = [];
 
@@ -264,7 +275,7 @@
         // Load requests from Firestore
         async function loadRequests() {
             try {
-                const q = query(collection(db, "requests"));
+                const q = query(collection(db, "yield_requests"));
                 const querySnapshot = await getDocs(q);
                 
                 allRequests = [];
@@ -278,8 +289,8 @@
                 
                 // Sort by submission date descending
                 allRequests.sort((a, b) => {
-                    const dateA = a.submissionDate?.toDate ? a.submissionDate.toDate() : new Date(a.createdAt || '');
-                    const dateB = b.submissionDate?.toDate ? b.submissionDate.toDate() : new Date(b.createdAt || '');
+                    const dateA = a.submissionDate?.toDate ? a.submissionDate.toDate() : new Date(a.harvestDate || '');
+                    const dateB = b.submissionDate?.toDate ? b.submissionDate.toDate() : new Date(b.harvestDate || '');
                     return dateB - dateA;
                 });
                 
@@ -320,11 +331,12 @@
 
             let html = '';
             requests.forEach(request => {
-                const date = request.submissionDate?.toDate ? request.submissionDate.toDate() : new Date(request.createdAt || '');
+                const date = request.submissionDate?.toDate ? request.submissionDate.toDate() : new Date(request.harvestDate || '');
                 const formattedDate = date.toLocaleDateString();
                 
-                // Format request type for display
-                const requestTypeDisplay = formatRequestType(request.requestType);
+                // Format yield amount
+                const yieldAmount = request.yieldAmount || '0';
+                const requestTypeDisplay = `${yieldAmount} kg`;
                 
                 html += `
                     <tr>
@@ -333,11 +345,11 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${formattedDate}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(request.status)}">
-                                ${request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                ${request.status ? request.status.charAt(0).toUpperCase() + request.status.slice(1) : 'Pending'}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button onclick="openRequestModal('${request.farmerName}', '${requestTypeDisplay}', '${request.specificIssue.replace(/'/g, "\\'")}', '${request.id}', '${request.status}')" class="text-lime-600 hover:text-lime-900 mr-3">
+                            <button onclick="openRequestModal('${request.farmerName}', '${yieldAmount} kg', \`${(request.notes || 'No notes provided').replace(/`/g, '\\`')}\`, '${request.id}', '${request.status || 'pending'}', '${request.harvestDate}')" class="text-lime-600 hover:text-lime-900 mr-3">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </td>
@@ -346,20 +358,6 @@
             });
             
             requestsTableBody.innerHTML = html;
-        }
-
-        // Helper function to format request type
-        function formatRequestType(type) {
-            const typeMap = {
-                'fertilizer': 'Fertilizer Recommendation',
-                'pest_control': 'Pest Control Advice',
-                'soil_health': 'Soil Health Assessment',
-                'irrigation': 'Irrigation Optimization',
-                'weather_impact': 'Weather Impact Consultation',
-                'yield_optimization': 'Yield Optimization',
-                'other': 'Other'
-            };
-            return typeMap[type] || type;
         }
 
         // Helper function to get status class
@@ -371,6 +369,14 @@
                     return 'bg-green-100 text-green-800';
                 case 'rejected':
                     return 'bg-red-100 text-red-800';
+                case 'processing':
+                    return 'bg-blue-100 text-blue-800';
+                case 'stored':
+                    return 'bg-purple-100 text-purple-800';
+                case 'dispatched':
+                    return 'bg-indigo-100 text-indigo-800';
+                case 'completed':
+                    return 'bg-teal-100 text-teal-800';
                 default:
                     return 'bg-gray-100 text-gray-800';
             }
@@ -378,40 +384,52 @@
 
         // Search and filter functionality
         searchInput.addEventListener('input', filterRequests);
-        filterSelect.addEventListener('change', filterRequests);
+        const statusFilter = document.getElementById('statusFilter');
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterRequests);
+        }
 
         function filterRequests() {
             const searchTerm = searchInput.value.toLowerCase();
-            const typeFilter = filterSelect.value;
+            const statusFilterValue = statusFilter ? statusFilter.value : 'all';
             
             let filtered = allRequests;
             
             if (searchTerm) {
                 filtered = filtered.filter(request => 
                     (request.farmerName && request.farmerName.toLowerCase().includes(searchTerm)) ||
-                    (request.requestType && request.requestType.toLowerCase().includes(searchTerm)) ||
-                    (request.specificIssue && request.specificIssue.toLowerCase().includes(searchTerm))
+                    (request.farmerId && request.farmerId.toLowerCase().includes(searchTerm)) ||
+                    (request.notes && request.notes.toLowerCase().includes(searchTerm))
                 );
             }
             
-            if (typeFilter && typeFilter !== 'All Types') {
-                const typeMap = {
-                    'Fertilizer Request': 'fertilizer',
-                    'Harvest Validation': 'harvest_validation',
-                    'Equipment Rental': 'equipment_rental'
-                };
-                const mappedType = typeMap[typeFilter] || typeFilter.toLowerCase().replace(' ', '_');
-                filtered = filtered.filter(request => request.requestType === mappedType);
+            if (statusFilterValue && statusFilterValue !== 'all') {
+                filtered = filtered.filter(request => request.status === statusFilterValue);
             }
             
             renderRequestsTable(filtered);
         }
 
         // Global functions for buttons
-        window.openRequestModal = async (farmer, type, message, requestId, status) => {
+        window.openRequestModal = async (farmer, yieldAmount, notes, requestId, status, harvestDate) => {
             document.getElementById('modalFarmer').innerText = farmer;
-            document.getElementById('modalType').innerText = type;
-            document.getElementById('modalMessage').innerText = message;
+            document.getElementById('modalType').innerText = yieldAmount;
+            document.getElementById('modalMessage').innerText = notes || 'No notes provided';
+            
+            // Get the full request data to access batchId and quality
+            const request = allRequests.find(req => req.id === requestId);
+            if (request) {
+                document.getElementById('modalBatchId').innerText = request.batchId || 'N/A';
+                document.getElementById('modalQuality').innerText = request.quality || 'N/A';
+            }
+            
+            // Add harvest date display if exists
+            const harvestDateElement = document.getElementById('modalHarvestDate');
+            if (harvestDateElement && harvestDate) {
+                const formattedHarvestDate = new Date(harvestDate).toLocaleDateString();
+                harvestDateElement.querySelector('span:last-child').innerText = formattedHarvestDate;
+                harvestDateElement.classList.remove('hidden');
+            }
             
             // Update approve/reject buttons based on current status
             const approveBtn = document.querySelector('.bg-lime-600');
@@ -420,6 +438,24 @@
             // Store request ID in data attribute
             approveBtn.dataset.requestId = requestId;
             rejectBtn.dataset.requestId = requestId;
+            
+            // Disable buttons if already approved/rejected
+            if (status === 'approved') {
+                approveBtn.disabled = true;
+                approveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                rejectBtn.disabled = false;
+                rejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else if (status === 'rejected') {
+                rejectBtn.disabled = true;
+                rejectBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                approveBtn.disabled = false;
+                approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                approveBtn.disabled = false;
+                rejectBtn.disabled = false;
+                approveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                rejectBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
             
             const modal = document.getElementById('requestModal');
             const modalContent = modal.querySelector('div');
@@ -452,7 +488,7 @@
         // Update request status
         async function updateRequestStatus(requestId, newStatus) {
             try {
-                await updateDoc(doc(db, "requests", requestId), {
+                await updateDoc(doc(db, "yield_requests", requestId), {
                     status: newStatus,
                     updatedAt: serverTimestamp()
                 });

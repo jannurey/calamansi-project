@@ -15,7 +15,8 @@ import {
     serverTimestamp,
     getDoc,
     getDocs,
-   updateDoc
+   updateDoc,
+   deleteDoc
 } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 import { initAuthSidebar } from './Auth.js';
 
@@ -182,11 +183,24 @@ const app = {
                 document.getElementById('p-phone').innerText = u.phoneNumber || 'N/A';
                 document.getElementById('p-location').innerText = u.location || 'N/A';
                 document.getElementById('p-created').innerText = u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString() : 'N/A';
+                
+                // Update status in both profile section and detail modal header
+                const statusValue = u.status || 'Active';
                 const statusEl = document.getElementById('p-status');
-                statusEl.innerText = u.status || 'Active';
-                statusEl.className = u.status === 'Active'
+                statusEl.innerText = statusValue;
+                statusEl.className = statusValue.toLowerCase() === 'active'
                     ? 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-green-100 text-green-700' 
                     : 'px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-500';
+                
+                // Update status in the modal header
+                const detStatusEl = document.getElementById('det-status');
+                detStatusEl.innerText = '';
+                detStatusEl.innerHTML = `
+                    <i class="fa-solid ${statusValue.toLowerCase() === 'active' ? 'fa-check' : 'fa-moon'}"></i> ${statusValue}
+                `;
+                detStatusEl.className = statusValue.toLowerCase() === 'active'
+                    ? 'px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 flex items-center gap-1'
+                    : 'px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 flex items-center gap-1';
 
                 const farmQuery = query(collection(db, "Farm_information"), where("Locations", "==", u.location));
                 const farmSnapshot = await getDocs(farmQuery);
@@ -267,7 +281,6 @@ const app = {
         if (cancelBtn) cancelBtn.style.display = 'none';
     },
 
-      // ...existing code...
     async saveProfileChanges() {
         const fullName = document.getElementById('edit-fullname').value.trim();
         const nameParts = fullName.split(' ');
@@ -395,6 +408,138 @@ const app = {
         setTimeout(() => this.logoutModal.classList.add('hidden'), 300);
     },
 
+    showAccountOptions(event, farmerId, firstName, surname) {
+        const menu = document.getElementById('accountActionsMenu');
+        const setStatusBtn = document.getElementById('setStatusBtn');
+        const statusActionText = document.getElementById('statusActionText');
+        const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+        
+        // Get the farmer's current status
+        const farmer = this.allFarmers.find(f => f.id === farmerId);
+        const currentStatus = farmer?.status || 'Active';
+        
+        // Set the button text based on current status
+        if (currentStatus.toLowerCase() === 'active') {
+            statusActionText.textContent = 'Set Inactive';
+        } else {
+            statusActionText.textContent = 'Set Active';
+        }
+        
+        // Position the menu near the clicked button
+        const rect = event.target.getBoundingClientRect();
+        menu.style.top = `${rect.bottom + window.scrollY}px`;
+        menu.style.left = `${rect.left + window.scrollX - 120}px`;
+        
+        // Show the menu
+        menu.classList.remove('hidden');
+        
+        // Set up event handler for the status button
+        setStatusBtn.onclick = () => {
+            if (currentStatus.toLowerCase() === 'active') {
+                this.setFarmerInactive(farmerId, firstName, surname);
+            } else {
+                this.setFarmerActive(farmerId, firstName, surname);
+            }
+        };
+        
+        deleteAccountBtn.onclick = () => this.deleteFarmerAccount(farmerId, firstName, surname);
+        
+        // Close menu when clicking elsewhere
+        const closeMenu = (e) => {
+            if (!menu.contains(e.target) && !event.target.contains(e.target)) {
+                menu.classList.add('hidden');
+                document.removeEventListener('click', closeMenu);
+            }
+        };
+        
+        setTimeout(() => {
+            document.addEventListener('click', closeMenu);
+        }, 10);
+    },
+
+    async setFarmerInactive(farmerId, firstName, surname) {
+        if (!confirm(`Are you sure you want to set ${firstName} ${surname}'s account as inactive?`)) {
+            document.getElementById('accountActionsMenu').classList.add('hidden');
+            return;
+        }
+        
+        try {
+            // Update the farmer's status to inactive
+            await FarmerSDK.updateFarmer(farmerId, { status: 'Inactive' });
+            
+            alert(`${firstName} ${surname}'s account has been set to inactive.`);
+            
+            // Refresh the farmers list
+            FarmerSDK.subscribeToFarmers((data) => {
+                this.allFarmers = data;
+                this.updateStats(data);
+                this.handleFilter();
+            });
+        } catch (error) {
+            console.error('Error setting farmer inactive:', error);
+            alert('Error setting farmer as inactive: ' + error.message);
+        }
+        
+        document.getElementById('accountActionsMenu').classList.add('hidden');
+    },
+
+    async setFarmerActive(farmerId, firstName, surname) {
+        if (!confirm(`Are you sure you want to set ${firstName} ${surname}'s account as active?`)) {
+            document.getElementById('accountActionsMenu').classList.add('hidden');
+            return;
+        }
+        
+        try {
+            // Update the farmer's status to active
+            await FarmerSDK.updateFarmer(farmerId, { status: 'Active' });
+            
+            alert(`${firstName} ${surname}'s account has been set to active.`);
+            
+            // Refresh the farmers list
+            FarmerSDK.subscribeToFarmers((data) => {
+                this.allFarmers = data;
+                this.updateStats(data);
+                this.handleFilter();
+            });
+        } catch (error) {
+            console.error('Error setting farmer active:', error);
+            alert('Error setting farmer as active: ' + error.message);
+        }
+        
+        document.getElementById('accountActionsMenu').classList.add('hidden');
+    },
+
+    async deleteFarmerAccount(farmerId, firstName, surname) {
+        if (!confirm(`⚠️ WARNING: Are you sure you want to permanently delete ${firstName} ${surname}'s account? This action cannot be undone and will remove all associated data.`)) {
+            document.getElementById('accountActionsMenu').classList.add('hidden');
+            return;
+        }
+        
+        try {
+            // Delete the user document from Firestore
+            await this.deleteFarmerFromDatabase(farmerId);
+            
+            alert(`${firstName} ${surname}'s account has been permanently deleted.`);
+            
+            // Refresh the farmers list
+            FarmerSDK.subscribeToFarmers((data) => {
+                this.allFarmers = data;
+                this.updateStats(data);
+                this.handleFilter();
+            });
+        } catch (error) {
+            console.error('Error deleting farmer account:', error);
+            alert('Error deleting farmer account: ' + error.message);
+        }
+        
+        document.getElementById('accountActionsMenu').classList.add('hidden');
+    },
+
+    async deleteFarmerFromDatabase(farmerId) {
+        // Delete the user document from the users collection
+        await deleteDoc(doc(db, "users", farmerId));
+    },
+
     render(data) {
         this.grid.innerHTML = '';
         if (data.length === 0) {
@@ -425,8 +570,8 @@ const app = {
         }
 
         data.forEach(f => {
-            let statusClass = f.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500';
-            let statusIcon = f.status === 'Active' ? 'fa-check' : 'fa-moon';
+            let statusClass = (!f.status || f.status.toLowerCase() === 'active') ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500';
+            let statusIcon = (!f.status || f.status.toLowerCase() === 'active') ? 'fa-check' : 'fa-moon';
             const card = document.createElement('div');
             card.className = 'bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition group overflow-hidden relative';
             card.innerHTML = `
@@ -436,9 +581,9 @@ const app = {
                         <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${f.surname}" alt="${f.firstName}" class="w-full h-full">
                     </div>
                     <div class="flex justify-end pt-2 mb-2">
-                        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusClass} flex items-center gap-1">
-                            <i class="fa-solid ${statusIcon}"></i> ${f.status}
-                        </span>
+                        <button class="account-options-btn w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-700 transition" data-farmer-id="${f.id}" title="Account Options">
+                            <i class="fa-solid fa-ellipsis"></i>
+                        </button>
                     </div>
                     <div class="mt-2">
                         <h3 class="font-bold text-slate-800 text-lg leading-tight">${f.firstName} ${f.surname}</h3>
@@ -464,6 +609,14 @@ const app = {
                 </div>
             `;
             card.querySelector('.view-btn').onclick = () => this.openDetailModal(f.id);
+            
+            // Add event listener for the account options button
+            const optionsBtn = card.querySelector('.account-options-btn');
+            optionsBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.showAccountOptions(e, f.id, f.firstName, f.surname);
+            };
+            
             this.grid.appendChild(card);
         });
     }

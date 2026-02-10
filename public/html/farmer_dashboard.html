@@ -77,16 +77,13 @@
                 <a href="farmer_dashboard.html" class="flex items-center gap-3 px-4 py-3 bg-lime-800 rounded-xl text-white font-medium shadow-inner">
                     <i class="fa-solid fa-gauge-high w-5"></i> Dashboard
                 </a>
-                <a href="farmer_requests.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
-                    <i class="fa-solid fa-comments w-5"></i> Requests
+                <a href="add_yield_record.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                    <i class="fa-solid fa-plus w-5"></i> Add Yield Record
                 </a>
                 <a href="farmer_yield_history.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
-                    <i class="fa-solid fa-chart-line w-5"></i> Yield History
+                    <i class="fa-solid fa-clock-rotate-left w-5"></i> Yield History
                 </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
-                    <i class="fa-solid fa-clock-rotate-left w-5"></i> History
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
+                <a href="farmer_settings.html" class="flex items-center gap-3 px-4 py-3 text-lime-200 hover:bg-lime-800 hover:text-white rounded-xl transition">
                     <i class="fa-solid fa-gear w-5"></i> Settings
                 </a>
             </nav>
@@ -138,6 +135,50 @@
                         <p class="text-slate-600">Manage your yield data and submit requests to the admin.</p>
                     </div>
 
+                    <!-- Sensor Reading Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-start justify-between group hover:shadow-md transition cursor-default">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-500 mb-1">Temperature</p>
+                                <h3 class="text-3xl font-bold text-slate-800">--°C</h3>
+                                <p class="text-xs text-orange-500 mt-2 font-medium">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Live
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                                <i class="fa-solid fa-temperature-half"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-start justify-between group hover:shadow-md transition cursor-default">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-500 mb-1">Humidity</p>
+                                <h3 class="text-3xl font-bold text-slate-800">--%</h3>
+                                <p class="text-xs text-blue-500 mt-2 font-medium">
+                                    <i class="fa-solid fa-check"></i> Live
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                                <i class="fa-solid fa-droplet"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-start justify-between group hover:shadow-md transition cursor-default">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-500 mb-1">Soil Moisture</p>
+                                <h3 class="text-3xl font-bold text-slate-800">--%</h3>
+                                <p class="text-xs text-red-500 mt-2 font-medium">
+                                    <i class="fa-solid fa-circle-exclamation"></i> Live
+                                </p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl group-hover:scale-110 transition">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </div>
+                        </div>
+
+                    </div>
+
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         
@@ -182,6 +223,26 @@
 
                     </div>
 
+                    <!-- Sensor Trends Graph -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">Sensor Trends</h3>
+                                <p class="text-sm text-slate-500">Historical data analysis for optimal growth.</p>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-2" id="timeframe-controls">
+                                <button data-tf="days" class="chart-filter-active px-3 py-1.5 text-xs font-semibold rounded-lg transition shadow-sm shadow-lime-200">Today</button>
+                                <button data-tf="weeks" class="chart-filter-inactive px-3 py-1.5 text-xs font-semibold rounded-lg transition">Weeks</button>
+                                <button data-tf="months" class="chart-filter-inactive px-3 py-1.5 text-xs font-semibold rounded-lg transition">Months</button>
+                            </div>
+                        </div>
+
+                        <div class="relative h-72 w-full">
+                            <canvas id="sensorChart"></canvas>
+                        </div>
+                    </div>
+
                     <!-- Quick Actions -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <!-- Submit Yield Data -->
@@ -191,12 +252,12 @@
                                     <i class="fas fa-seedling text-lime-600 text-xl"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-lg font-semibold text-slate-800">Submit Yield Data</h3>
+                                    <h3 class="text-lg font-semibold text-slate-800">Add Yield Record</h3>
                                     <p class="text-sm text-slate-500">Record your latest harvest</p>
                                 </div>
                             </div>
-                            <button id="submit-yield-btn" class="w-full bg-lime-600 hover:bg-lime-700 text-white py-2 px-4 rounded-lg font-medium transition">
-                                Submit Data
+                            <button id="submit-yield-btn" class="w-full bg-lime-600 hover:bg-lime-700 text-white py-2 px-4 rounded-lg font-medium transition" onclick="window.location.href='add_yield_record.html'">
+                                Add Record
                             </button>
                         </div>
 
@@ -233,6 +294,51 @@
                         </div>
                     </div>
 
+                    <!-- AI Recommendations Panel -->
+                    <div class="ai-panel p-6 rounded-2xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i class="fa-solid fa-robot text-8xl text-lime-900"></i>
+                        </div>        
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-lime-500 to-green-400 text-white flex items-center justify-center shadow-lg shadow-lime-200">
+                                    <i class="fa-solid fa-leaf text-sm"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-lime-900">Agronomic Analysis</h3>
+                            </div>
+
+                            <div class="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-lime-100 mb-3 mt-4">
+                                <h4 class="font-bold text-slate-800 text-sm mb-1" id="ai-main-status">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-indigo-500 mr-2"></i>System initializing...
+                                </h4>
+                                <p class="text-slate-600 text-sm" id="ai-main-desc">
+                                    Monitoring sensor streams...
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div class="bg-white/60 p-3 rounded-lg border border-white">
+                                    <p class="text-xs font-bold text-lime-800 uppercase">Predicted Yield Impact</p>
+                                    <p class="text-sm text-slate-600" id="ai-yield-impact">--</p>
+                                </div>
+                                <div class="bg-white/60 p-3 rounded-lg border border-white">
+                                    <p class="text-xs font-bold text-lime-800 uppercase">Fertilizer Schedule</p>
+                                    <p class="text-sm text-slate-600" id="ai-fert-schedule">--</p>
+                                </div>
+                            </div>
+
+                            <button id="btn-ask-ai"
+                                class="mt-4 px-4 py-2 bg-lime-600 text-white text-sm rounded-lg
+                                    hover:bg-lime-700 transition">
+                                Get Detailed Recommendations
+                            </button>
+
+                            <div id="ai-response-box"
+                                class="hidden mt-4 p-4 text-sm rounded-lg border border-lime-200 bg-lime-50">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Recent Activity -->
                     <div class="ai-panel p-6 rounded-2xl relative overflow-hidden">
                         <div class="absolute top-0 right-0 p-4 opacity-10">
@@ -264,30 +370,54 @@
     <div id="yield-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-xl max-w-md w-full mx-4 p-6">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Submit Yield Data</h3>
+                <h3 class="text-lg font-semibold text-gray-900">Add Yield Record</h3>
                 <button id="close-yield-modal" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <form id="yield-form">
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Yield Amount (kg)</label>
-                    <input type="number" id="yield-amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Batch ID</label>
+                    <input type="text" id="batch-id" readonly class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500" placeholder="Auto-generated">
+                    <p class="text-xs text-gray-500 mt-1">Auto-generated when you submit</p>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date of Harvest</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Yield Amount (kg)</label>
+                    <input type="number" step="0.01" id="yield-amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500" placeholder="e.g. 150.5">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Harvest Date</label>
                     <input type="date" id="harvest-date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
                 </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quality Grade</label>
+                    <select id="quality-grade" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
+                        <option value="">Select Quality</option>
+                        <option value="Grade A">Grade A - Premium</option>
+                        <option value="Grade B">Grade B - Good</option>
+                        <option value="Grade C">Grade C - Standard</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="yield-status" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500">
+                        <option value="pending">Pending Approval</option>
+                        <option value="processing">Processing</option>
+                        <option value="stored">Stored</option>
+                        <option value="dispatched">Dispatched</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
-                    <textarea id="yield-notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea id="yield-notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-500 focus:border-lime-500" placeholder="Add any additional notes about this harvest..."></textarea>
                 </div>
                 <div class="flex justify-end space-x-3">
                     <button type="button" id="cancel-yield" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium">
                         Cancel
                     </button>
                     <button type="submit" id="submit-yield" class="px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white rounded-lg font-medium">
-                        Submit Request
+                        <i class="fa-solid fa-save mr-2"></i>Save Record
                     </button>
                 </div>
             </form>
@@ -565,45 +695,81 @@
         yieldForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const submitBtn = document.getElementById('submit-yield');
-            const originalText = submitBtn.textContent;
+            const originalText = submitBtn.innerHTML;
             
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generating ID...';
 
             try {
                 const user = auth.currentUser;
                 const userDoc = await getDoc(doc(db, "users", user.uid));
                 const userData = userDoc.data();
                 
+                // Generate Batch ID
+                const batchId = await generateBatchId();
+                
                 const yieldData = {
                     farmerId: user.uid,
                     farmerName: `${userData.firstName} ${userData.surname || userData.lastName || ''}`,
+                    batchId: batchId,
                     yieldAmount: parseFloat(document.getElementById('yield-amount').value),
                     harvestDate: document.getElementById('harvest-date').value,
+                    quality: document.getElementById('quality-grade').value,
+                    status: document.getElementById('yield-status').value,
                     notes: document.getElementById('yield-notes').value,
-                    status: 'pending',
                     submissionDate: serverTimestamp()
                 };
 
                 await addDoc(collection(db, "yield_requests"), yieldData);
-                alert('Yield data submitted successfully!');
+                alert('Yield record added successfully! Batch ID: ' + batchId);
                 yieldModal.classList.add('hidden');
                 yieldModal.classList.remove('flex');
                 yieldForm.reset();
+                document.getElementById('batch-id').value = ''; // Clear the readonly field
             } catch (error) {
                 console.error("Error submitting yield data:", error);
                 alert('Error submitting yield data. Please try again.');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                submitBtn.innerHTML = originalText;
             }
         });
 
-        // View requests modal
+        // Generate Batch ID with format YC-2026-XXX
+        async function generateBatchId() {
+            try {
+                // Query all existing yield requests to find the highest number
+                const q = query(collection(db, "yield_requests"));
+                const querySnapshot = await getDocs(q);
+                
+                let maxNumber = 0;
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.batchId && data.batchId.startsWith('YC-2026-')) {
+                        const numberPart = data.batchId.split('-')[2];
+                        const num = parseInt(numberPart, 10);
+                        if (!isNaN(num) && num > maxNumber) {
+                            maxNumber = num;
+                        }
+                    }
+                });
+                
+                // Increment to get next number
+                const nextNumber = maxNumber + 1;
+                const formattedNumber = nextNumber.toString().padStart(3, '0');
+                
+                return `YC-2026-${formattedNumber}`;
+            } catch (error) {
+                console.error("Error generating batch ID:", error);
+                // Fallback to timestamp if there's an error
+                return `YC-2026-${Date.now().toString().slice(-3)}`;
+            }
+        }
+
+        // View requests functionality
         viewRequestsBtn.addEventListener('click', async () => {
-            requestsModal.classList.remove('hidden');
-            requestsModal.classList.add('flex');
-            await loadRequests();
+            window.location.href = 'farmer_yield_history.html';
         });
 
         closeRequestsModal.addEventListener('click', () => {
@@ -836,5 +1002,6 @@
             }
         });
     </script>
+    <script type="module" src="../js/farmer_dashboard.js"></script>
 </body>
 </html>

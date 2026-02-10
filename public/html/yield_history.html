@@ -122,17 +122,17 @@
                 <!-- Summary Stats -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl"><i class="fa-solid fa-truck"></i></div>
+                        <div class="w-12 h-12 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center text-xl"><i class="fa-solid fa-clock"></i></div>
                         <div>
-                            <p class="text-xs text-slate-500 uppercase font-bold">Total Dispatched</p>
-                            <h3 class="text-xl font-bold text-slate-800" id="total-dispatched">--</h3>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Pending Approval</p>
+                            <h3 class="text-xl font-bold text-slate-800" id="total-pending">--</h3>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl"><i class="fa-solid fa-warehouse"></i></div>
+                        <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl"><i class="fa-solid fa-check-circle"></i></div>
                         <div>
-                            <p class="text-xs text-slate-500 uppercase font-bold">Total Stored</p>
-                            <h3 class="text-xl font-bold text-slate-800" id="total-stored">--</h3>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Approved</p>
+                            <h3 class="text-xl font-bold text-slate-800" id="total-approved">--</h3>
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
@@ -143,9 +143,9 @@
                         </div>
                     </div>
                     <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl"><i class="fa-solid fa-calendar-plus"></i></div>
+                        <div class="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl"><i class="fa-solid fa-calendar-plus"></i></div>
                         <div>
-                            <p class="text-xs text-slate-500 uppercase font-bold">Total Records</p>
+                            <p class="text-xs text-slate-500 uppercase font-bold">Total Requests</p>
                             <h3 class="text-xl font-bold text-slate-800" id="total-records">--</h3>
                         </div>
                     </div>
@@ -244,6 +244,7 @@
             collection,
             query,
             where,
+            orderBy,
             getDocs,
             addDoc,
             updateDoc,
@@ -258,8 +259,8 @@
         const userDisplayName = document.getElementById('user-display-name');
         const userDisplayEmail = document.getElementById('user-display-email');
         const yieldHistoryTableBody = document.getElementById('yield-history-table-body');
-        const totalDispatched = document.getElementById('total-dispatched');
-        const totalStored = document.getElementById('total-stored');
+        const totalPending = document.getElementById('total-pending');
+        const totalApproved = document.getElementById('total-approved');
         const totalYields = document.getElementById('total-yields');
         const totalRecords = document.getElementById('total-records');
         const searchInput = document.getElementById('searchInput');
@@ -289,23 +290,15 @@
         // Load yield records from Firestore
         async function loadYieldRecords() {
             try {
-                const q = query(collection(db, "yield_records"));
+                const q = query(collection(db, "yield_requests"), orderBy("submissionDate", "desc"));
                 const querySnapshot = await getDocs(q);
                 
                 allYieldRecords = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
+                querySnapshot.forEach((doc) => {                    const data = doc.data();
                     allYieldRecords.push({
                         id: doc.id,
                         ...data
                     });
-                });
-                
-                // Sort by harvest date descending
-                allYieldRecords.sort((a, b) => {
-                    const dateA = a.harvestDate instanceof Date ? a.harvestDate : new Date(a.harvestDate || a.date || '');
-                    const dateB = b.harvestDate instanceof Date ? b.harvestDate : new Date(b.harvestDate || b.date || '');
-                    return dateB - dateA;
                 });
                 
                 updateSummaryStats();
@@ -318,18 +311,18 @@
 
         // Update summary statistics
         function updateSummaryStats() {
+            // Calculate statistics based on status
+            const pending = allYieldRecords.filter(record => record.status === 'pending').length;
+            const approved = allYieldRecords.filter(record => record.status === 'approved').length;
+            
             // Calculate total yields (sum of all yield amounts)
             const totalYieldValue = allYieldRecords.reduce((sum, record) => {
                 const amount = parseFloat(record.yieldAmount || record.harvestYield || 0);
                 return sum + (isNaN(amount) ? 0 : amount);
             }, 0);
             
-            // Calculate dispatch and storage stats
-            const dispatched = allYieldRecords.filter(record => record.status === 'dispatched').length;
-            const stored = allYieldRecords.filter(record => record.status === 'stored').length;
-            
-            totalDispatched.textContent = dispatched;
-            totalStored.textContent = stored;
+            totalPending.textContent = pending;
+            totalApproved.textContent = approved;
             totalYields.textContent = totalYieldValue.toFixed(2) + ' kg';
             totalRecords.textContent = allYieldRecords.length;
         }
@@ -408,16 +401,20 @@
         // Helper function to get status class
         function getStatusClass(status) {
             switch(status) {
-                case 'processing':
-                    return 'bg-yellow-100 text-yellow-800';
-                case 'stored':
-                    return 'bg-blue-100 text-blue-800';
-                case 'dispatched':
-                    return 'bg-green-100 text-green-800';
-                case 'completed':
-                    return 'bg-purple-100 text-purple-800';
                 case 'pending':
-                    return 'bg-gray-100 text-gray-800';
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'approved':
+                    return 'bg-green-100 text-green-800';
+                case 'rejected':
+                    return 'bg-red-100 text-red-800';
+                case 'processing':
+                    return 'bg-blue-100 text-blue-800';
+                case 'stored':
+                    return 'bg-purple-100 text-purple-800';
+                case 'dispatched':
+                    return 'bg-indigo-100 text-indigo-800';
+                case 'completed':
+                    return 'bg-teal-100 text-teal-800';
                 default:
                     return 'bg-gray-100 text-gray-800';
             }
@@ -548,7 +545,8 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Batch ID</label>
-                        <input type="text" id="addBatchId" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. YC-1234567">
+                        <input type="text" id="addBatchId" readonly class="w-full px-3 py-2 bg-gray-100 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="Auto-generated">
+                        <p class="text-xs text-gray-500 mt-1">Will auto-generate when saved</p>
                     </div>
                 </div>
                 
@@ -558,8 +556,8 @@
                         <input type="date" id="addHarvestDate" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Harvest Yield</label>
-                        <input type="text" id="addHarvestYield" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. 50 kg">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Yield Amount (kg)</label>
+                        <input type="text" id="addHarvestYield" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition" placeholder="e.g. 50.5 kg">
                     </div>
                 </div>
                 
@@ -568,9 +566,9 @@
                         <label class="block text-sm font-medium text-slate-700 mb-1">Quality</label>
                         <select id="addQuality" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 transition">
                             <option value="">Select Quality</option>
-                            <option value="Grade A">Grade A</option>
-                            <option value="Grade B">Grade B</option>
-                            <option value="Grade C">Grade C</option>
+                            <option value="Grade A">Grade A - Premium</option>
+                            <option value="Grade B">Grade B - Good</option>
+                            <option value="Grade C">Grade C - Standard</option>
                         </select>
                     </div>
                     <div>
@@ -681,13 +679,16 @@
             
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Saving...';
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generating ID...';
             submitBtn.disabled = true;
             
             try {
+                // Generate Batch ID
+                const batchId = await generateBatchId();
+                
                 const newRecord = {
                     FarmerName: document.getElementById('addFarmerName').value,
-                    batch_id: document.getElementById('addBatchId').value,
+                    batch_id: batchId,
                     harvestDate: document.getElementById('addHarvestDate').value,
                     date: document.getElementById('addHarvestDate').value,
                     harvestYield: document.getElementById('addHarvestYield').value,
@@ -700,9 +701,12 @@
                 if (window.app && window.app.addYieldRecord) {
                     await window.app.addYieldRecord(newRecord);
                     closeAddYieldModal();
-                    alert('Yield record added successfully!');
+                    alert('Yield record added successfully! Batch ID: ' + batchId);
                 } else {
-                    alert('Error: Could not add record. Please make sure the page is fully loaded.');
+                    // Fallback if yield_history.js is not loaded
+                    await addDoc(collection(db, "yield_requests"), newRecord);
+                    closeAddYieldModal();
+                    alert('Yield record added successfully! Batch ID: ' + batchId);
                 }
             } catch (error) {
                 console.error('Error adding yield record:', error);
@@ -712,6 +716,38 @@
                 submitBtn.disabled = false;
             }
         });
+        
+        // Generate Batch ID with format YC-2026-XXX
+        async function generateBatchId() {
+            try {
+                // Query all existing yield requests to find the highest number
+                const q = query(collection(db, "yield_requests"));
+                const querySnapshot = await getDocs(q);
+                
+                let maxNumber = 0;
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.batchId && data.batchId.startsWith('YC-2026-')) {
+                        const numberPart = data.batchId.split('-')[2];
+                        const num = parseInt(numberPart, 10);
+                        if (!isNaN(num) && num > maxNumber) {
+                            maxNumber = num;
+                        }
+                    }
+                });
+                
+                // Increment to get next number
+                const nextNumber = maxNumber + 1;
+                const formattedNumber = nextNumber.toString().padStart(3, '0');
+                
+                return `YC-2026-${formattedNumber}`;
+            } catch (error) {
+                console.error("Error generating batch ID:", error);
+                // Fallback to timestamp if there's an error
+                return `YC-2026-${Date.now().toString().slice(-3)}`;
+            }
+        }
     </script>
 
     <!-- LOGOUT MODAL -->
